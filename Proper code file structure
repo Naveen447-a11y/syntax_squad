@@ -1,0 +1,59 @@
+SafeCampus/
+│
+├── index.html                # Main landing page
+├── dashboard.html            # Safety dashboard
+├── simulation.html           # Disaster training simulation
+├── map.html                  # Campus evacuation map
+│
+├── requirements.txt          # Project dependencies
+├── README.md                 # Project documentation
+│
+├── css/
+│   ├── style.css             # Main styles
+│   ├── dashboard.css         # Dashboard styling
+│   ├── emergency.css         # Panic mode UI
+│   └── animations.css        # UI animations
+│
+├── js/
+│   ├── app.js                # Main application logic
+│   ├── disaster-data.js      # Disaster instructions data
+│   ├── preparedness.js       # Preparedness score system
+│   ├── evacuation.js         # BFS evacuation path algorithm
+│   ├── assistant.js          # AI disaster assistant logic
+│   ├── voice.js              # Voice safety instructions
+│   ├── alerts.js             # Emergency alert system
+│   ├── simulation.js         # Disaster training simulation
+│   ├── geolocation.js        # Location-based services
+│   └── certificate.js        # Preparedness certificate generator
+│
+├── data/
+│   ├── disasters.json        # Disaster instructions
+│   ├── emergency_contacts.json
+│   └── preparedness.json
+│
+├── assets/
+│   ├── images/
+│   │   ├── fire.png
+│   │   ├── earthquake.png
+│   │   ├── flood.png
+│   │   └── cyclone.png
+│   │
+│   ├── icons/
+│   │   ├── fire-extinguisher.svg
+│   │   ├── exit.svg
+│   │   ├── medical.svg
+│   │   └── alarm.svg
+│   │
+│   └── sounds/
+│       ├── alarm.mp3
+│       └── alert.mp3
+│
+├── components/
+│   ├── navbar.html
+│   ├── footer.html
+│   └── emergency_button.html
+│
+└── utils/
+    ├── helpers.js            # Helper functions
+    ├── storage.js            # LocalStorage utilities
+    └── constants.js          # Global constants
