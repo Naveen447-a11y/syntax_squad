@@ -1,0 +1,53 @@
+# SafeCampus – Disaster Preparedness System
+
+# Project Dependencies
+
+# Frontend Frameworks
+
+HTML5
+CSS3
+JavaScript (ES6)
+
+# UI Libraries
+
+Bootstrap >=5.3
+FontAwesome >=6.0
+
+# Charts / Dashboard
+
+Chart.js >=4.0
+
+# Maps (for campus emergency map)
+
+Leaflet.js >=1.9
+
+# Email Alerts
+
+EmailJS >=3.11
+
+# Voice Instructions
+
+Web Speech API (Browser Native)
+
+# Geolocation
+
+Browser Geolocation API
+
+# Offline Support
+
+Service Workers API
+
+# Data Storage
+
+LocalStorage API
+JSON
+
+# Development Tools
+
+Node.js >=18 (optional for local server)
+npm >=9
+
+# Optional Enhancements
+
+Three.js (for interactive campus maps)
+Animate.css (UI animations)
