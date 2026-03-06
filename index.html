@@ -1,0 +1,1947 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>SafeCampus – Disaster Preparedness & Emergency Response System</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet"/>
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+<style>
+/* ════════════════════════════════════════════
+   CSS CUSTOM PROPERTIES & RESET
+════════════════════════════════════════════ */
+:root {
+  --bg:#0b0f1a; --surface:#111827; --surface2:#1a2236; --border:rgba(255,255,255,0.07);
+  --text:#e8edf5; --muted:#6b7a99; --accent:#f97316; --accent2:#3b82f6;
+  --success:#22c55e; --warn:#eab308; --danger:#ef4444;
+  --radius:14px; --radius-lg:22px;
+  --dis-hue:#f97316; --dis-glow:rgba(249,115,22,0.18);
+}
+:root.light { --bg:#f0f4f8; --surface:#ffffff; --surface2:#e8edf5; --border:rgba(0,0,0,0.09); --text:#0f172a; --muted:#64748b; }
+*,*::before,*::after { box-sizing:border-box; margin:0; padding:0; }
+body { font-family:'DM Sans',sans-serif; background:var(--bg); color:var(--text); min-height:100vh; overflow-x:hidden; }
+body::before { content:''; position:fixed; inset:0; background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E"); pointer-events:none; z-index:0; opacity:.5; }
+body::after { content:''; position:fixed; inset:0; background:radial-gradient(ellipse 80% 50% at 50% -10%, rgba(249,115,22,0.07) 0%,transparent 60%); pointer-events:none; z-index:0; transition:background .5s; }
+
+/* ════════════════════════════════════════════
+   HEADER
+════════════════════════════════════════════ */
+header { position:sticky; top:0; z-index:50; background:rgba(11,15,26,0.88); backdrop-filter:blur(16px); border-bottom:1px solid var(--border); padding:12px 20px; display:flex; align-items:center; gap:12px; transition:background .4s,border-color .4s; }
+:root.light header { background:rgba(240,244,248,0.92); }
+.logo-icon { width:36px; height:36px; background:var(--dis-hue); border-radius:10px; display:grid; place-items:center; font-size:18px; box-shadow:0 0 20px var(--dis-glow); flex-shrink:0; transition:background .5s,box-shadow .5s; }
+.header-text h1 { font-family:'Syne',sans-serif; font-size:1.35rem; font-weight:800; letter-spacing:.04em; }
+.header-text p { font-size:.65rem; color:var(--muted); }
+.header-spacer { flex:1; }
+.datetime-pill { display:flex; align-items:center; gap:6px; font-size:.72rem; color:var(--muted); background:var(--surface2); border:1px solid var(--border); border-radius:99px; padding:5px 12px; flex-shrink:0; }
+.day-chip { background:var(--dis-hue); color:#fff; padding:1px 7px; border-radius:99px; font-weight:700; font-size:.62rem; transition:background .5s; }
+.theme-toggle { display:flex; align-items:center; background:var(--surface2); border:1px solid var(--border); border-radius:99px; padding:4px; cursor:pointer; position:relative; width:60px; height:32px; transition:background .3s; flex-shrink:0; }
+.theme-toggle-thumb { position:absolute; left:4px; width:24px; height:24px; background:var(--dis-hue); border-radius:50%; display:grid; place-items:center; font-size:.75rem; transition:transform .3s cubic-bezier(.4,0,.2,1),background .5s; box-shadow:0 2px 8px var(--dis-glow); line-height:1; }
+:root.light .theme-toggle-thumb { transform:translateX(28px); }
+.theme-toggle-bg { position:absolute; right:8px; font-size:.7rem; opacity:.5; pointer-events:none; transition:opacity .3s; }
+:root.light .theme-toggle-bg { right:auto; left:8px; }
+.auth-btn { display:flex; align-items:center; gap:7px; padding:6px 14px; background:var(--surface2); border:1px solid var(--border); border-radius:99px; font-family:'DM Sans',sans-serif; font-size:.75rem; font-weight:600; color:var(--text); cursor:pointer; transition:all .2s; white-space:nowrap; flex-shrink:0; }
+.auth-btn:hover { border-color:var(--dis-hue); }
+.avatar { width:24px; height:24px; border-radius:50%; background:var(--dis-hue); display:grid; place-items:center; font-size:.7rem; font-weight:800; color:#fff; flex-shrink:0; overflow:hidden; transition:background .5s; }
+.status-badge { padding:5px 13px; border-radius:99px; font-size:.68rem; font-weight:600; letter-spacing:.08em; text-transform:uppercase; border:1px solid var(--border); color:var(--muted); transition:all .4s; white-space:nowrap; flex-shrink:0; }
+.status-badge.prepared { color:var(--success); border-color:var(--success); background:rgba(34,197,94,.1); }
+.status-badge.needs-improvement { color:var(--warn); border-color:var(--warn); background:rgba(234,179,8,.1); }
+.status-badge.at-risk { color:var(--danger); border-color:var(--danger); background:rgba(239,68,68,.1); }
+@media(max-width:480px) { .datetime-pill { display:none; } header { gap:8px; } }
+
+/* ════════════════════════════════════════════
+   MODAL (AUTH)
+════════════════════════════════════════════ */
+.modal-overlay { position:fixed; inset:0; background:rgba(7,10,18,.88); backdrop-filter:blur(10px); z-index:1000; display:flex; align-items:center; justify-content:center; padding:20px; opacity:0; pointer-events:none; transition:opacity .3s; }
+.modal-overlay.open { opacity:1; pointer-events:all; }
+.modal { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-lg); padding:32px; width:100%; max-width:420px; position:relative; transform:translateY(20px); transition:transform .3s; }
+.modal-overlay.open .modal { transform:none; }
+.modal-close { position:absolute; top:14px; right:14px; background:var(--surface2); border:1px solid var(--border); border-radius:8px; width:30px; height:30px; display:grid; place-items:center; cursor:pointer; color:var(--muted); font-size:1rem; transition:all .2s; }
+.modal-close:hover { border-color:var(--danger); color:var(--danger); }
+.modal-logo { width:54px; height:54px; background:var(--dis-hue); border-radius:16px; display:grid; place-items:center; font-size:26px; margin:0 auto 16px; box-shadow:0 0 28px var(--dis-glow); transition:background .5s; }
+.modal h2 { font-family:'Syne',sans-serif; font-size:1.25rem; font-weight:800; text-align:center; margin-bottom:5px; }
+.modal-sub { text-align:center; color:var(--muted); font-size:.8rem; margin-bottom:22px; }
+.auth-tabs { display:flex; background:var(--surface2); border-radius:10px; padding:4px; gap:4px; margin-bottom:20px; }
+.auth-tab { flex:1; padding:8px; border:none; border-radius:7px; background:transparent; color:var(--muted); font-family:'Syne',sans-serif; font-size:.75rem; font-weight:700; cursor:pointer; transition:all .2s; }
+.auth-tab.active { background:var(--surface); color:var(--text); box-shadow:0 2px 8px rgba(0,0,0,.3); }
+.auth-panel { display:none; }
+.auth-panel.active { display:block; }
+.otp-step { display:none; }
+.otp-step.active { display:block; }
+.google-btn { width:100%; display:flex; align-items:center; justify-content:center; gap:12px; padding:13px 20px; background:#fff; border:none; border-radius:var(--radius); font-family:'DM Sans',sans-serif; font-size:.9rem; font-weight:600; color:#1f2937; cursor:pointer; transition:all .2s; box-shadow:0 2px 12px rgba(0,0,0,.2); }
+.google-btn:hover { transform:translateY(-1px); box-shadow:0 6px 20px rgba(0,0,0,.3); }
+.auth-divider { display:flex; align-items:center; gap:12px; margin:16px 0; color:var(--muted); font-size:.72rem; }
+.auth-divider::before,.auth-divider::after { content:''; flex:1; height:1px; background:var(--border); }
+.field-group { display:flex; flex-direction:column; gap:12px; }
+.field { display:flex; flex-direction:column; gap:5px; }
+.field label { font-size:.7rem; font-weight:600; color:var(--muted); letter-spacing:.06em; text-transform:uppercase; }
+.field input { background:var(--surface2); border:1px solid var(--border); border-radius:var(--radius); color:var(--text); font-family:'DM Sans',sans-serif; font-size:.9rem; padding:12px 16px; transition:border-color .2s,box-shadow .2s; outline:none; }
+.field input:focus { border-color:var(--dis-hue); box-shadow:0 0 0 3px var(--dis-glow); }
+.field input::placeholder { color:var(--muted); }
+.otp-group { display:flex; gap:8px; justify-content:center; margin:10px 0; }
+.otp-box { width:48px; height:54px; background:var(--surface2); border:1px solid var(--border); border-radius:10px; color:var(--text); font-family:'Syne',sans-serif; font-size:1.4rem; font-weight:800; text-align:center; outline:none; transition:border-color .2s,box-shadow .2s; }
+.otp-box:focus { border-color:var(--dis-hue); box-shadow:0 0 0 3px var(--dis-glow); }
+.btn-primary { width:100%; padding:13px; background:var(--dis-hue); border:none; border-radius:var(--radius); color:#fff; font-family:'Syne',sans-serif; font-size:.9rem; font-weight:700; cursor:pointer; transition:opacity .2s,transform .2s; box-shadow:0 4px 20px var(--dis-glow); margin-top:8px; }
+.btn-primary:hover { opacity:.9; transform:translateY(-1px); }
+.btn-primary:disabled { opacity:.5; cursor:not-allowed; transform:none; }
+.auth-msg { font-size:.78rem; text-align:center; padding:9px 14px; border-radius:8px; margin-top:10px; display:none; }
+.auth-msg.error { background:rgba(239,68,68,.12); color:#fca5a5; border:1px solid rgba(239,68,68,.3); display:block; }
+.auth-msg.success { background:rgba(34,197,94,.12); color:#86efac; border:1px solid rgba(34,197,94,.3); display:block; }
+.auth-msg.info { background:rgba(59,130,246,.12); color:#93c5fd; border:1px solid rgba(59,130,246,.3); display:block; }
+.spinner { width:15px; height:15px; border:2px solid rgba(255,255,255,.3); border-top-color:#fff; border-radius:50%; animation:spin .7s linear infinite; display:inline-block; vertical-align:middle; margin-right:6px; }
+@keyframes spin { to { transform:rotate(360deg); } }
+.resend-row { text-align:center; margin-top:12px; font-size:.78rem; color:var(--muted); }
+.resend-link { color:var(--dis-hue); cursor:pointer; font-weight:600; }
+
+/* ════════════════════════════════════════════
+   LAYOUT
+════════════════════════════════════════════ */
+.container { position:relative; z-index:1; max-width:1000px; margin:0 auto; padding:28px 16px 80px; display:grid; gap:20px; }
+@media(min-width:700px) { .container { padding:32px 28px 80px; } .grid-2 { display:grid; grid-template-columns:1fr 1fr; gap:20px; } .grid-3 { display:grid; grid-template-columns:1fr 1fr 1fr; gap:20px; } }
+
+/* ════════════════════════════════════════════
+   CARDS
+════════════════════════════════════════════ */
+.card { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-lg); padding:24px; position:relative; overflow:hidden; transition:border-color .4s; }
+.card::before { content:''; position:absolute; top:0; left:0; right:0; height:3px; background:var(--dis-hue); opacity:.7; transition:background .5s; }
+.card-label { font-family:'Syne',sans-serif; font-size:.65rem; font-weight:700; letter-spacing:.14em; text-transform:uppercase; color:var(--muted); margin-bottom:14px; display:flex; align-items:center; gap:7px; }
+.card-label .dot { width:6px; height:6px; border-radius:50%; background:var(--dis-hue); transition:background .5s; box-shadow:0 0 8px var(--dis-glow); }
+.card-title { font-family:'Syne',sans-serif; font-size:1.1rem; font-weight:800; margin-bottom:8px; }
+
+/* ════════════════════════════════════════════
+   DISASTER SELECTOR
+════════════════════════════════════════════ */
+.select-wrap { position:relative; }
+.disaster-select { width:100%; appearance:none; background:var(--surface2); border:1px solid var(--border); border-radius:var(--radius); color:var(--text); font-family:'Syne',sans-serif; font-size:1.05rem; font-weight:700; padding:16px 50px 16px 20px; cursor:pointer; transition:border-color .3s,box-shadow .3s; letter-spacing:.03em; outline:none; }
+.disaster-select:focus { border-color:var(--dis-hue); box-shadow:0 0 0 3px var(--dis-glow); }
+.disaster-select option { background:var(--surface); color:var(--text); }
+.select-arrow { position:absolute; right:18px; top:50%; transform:translateY(-50%); pointer-events:none; color:var(--muted); }
+.disaster-chips { display:flex; flex-wrap:wrap; gap:9px; margin-top:16px; }
+.chip { padding:7px 16px; border-radius:99px; border:1px solid var(--border); background:var(--surface2); font-size:.78rem; font-weight:500; cursor:pointer; transition:all .2s; color:var(--muted); display:flex; align-items:center; gap:6px; }
+.chip:hover { border-color:var(--dis-hue); color:var(--text); }
+.chip.active { background:var(--dis-hue); border-color:var(--dis-hue); color:#fff; font-weight:600; box-shadow:0 0 18px var(--dis-glow); }
+
+/* ════════════════════════════════════════════
+   🚨 EMERGENCY PANIC MODE
+════════════════════════════════════════════ */
+.panic-btn-wrap { display:flex; flex-direction:column; align-items:center; gap:14px; padding:20px 0; }
+.panic-btn { width:160px; height:160px; border-radius:50%; background:radial-gradient(circle,#dc2626,#991b1b); border:6px solid #ef4444; cursor:pointer; display:grid; place-items:center; font-size:3rem; box-shadow:0 0 0 0 rgba(239,68,68,0.5); transition:transform .15s; position:relative; animation:none; }
+.panic-btn:hover { transform:scale(1.05); }
+.panic-btn.armed { animation:panicPulse 1.2s ease-in-out infinite; box-shadow:0 0 40px rgba(239,68,68,0.6); }
+.panic-btn-label { font-family:'Syne',sans-serif; font-weight:800; font-size:.82rem; letter-spacing:.12em; text-transform:uppercase; color:var(--muted); }
+@keyframes panicPulse { 0%,100%{box-shadow:0 0 0 0 rgba(239,68,68,.5),0 0 40px rgba(239,68,68,.3)} 50%{box-shadow:0 0 0 25px rgba(239,68,68,0),0 0 60px rgba(239,68,68,.5)} }
+
+/* Panic Overlay */
+.panic-overlay { position:fixed; inset:0; z-index:200; background:rgba(0,0,0,.95); display:none; flex-direction:column; align-items:center; justify-content:flex-start; overflow-y:auto; padding:24px; }
+.panic-overlay.active { display:flex; animation:panicFlash .5s ease; }
+@keyframes panicFlash { 0%,20%,40%,60%,80%{background:rgba(220,38,38,.9)} 10%,30%,50%,70%,90%{background:rgba(0,0,0,.95)} 100%{background:rgba(0,0,0,.95)} }
+.panic-header { display:flex; flex-direction:column; align-items:center; gap:10px; margin-bottom:24px; width:100%; max-width:700px; }
+.panic-alert-bar { width:100%; background:var(--danger); color:#fff; padding:12px 20px; border-radius:var(--radius); font-family:'Syne',sans-serif; font-weight:800; font-size:.9rem; text-align:center; letter-spacing:.06em; animation:pulse 1s infinite; }
+.panic-dis-icon { font-size:5rem; margin-top:8px; filter:drop-shadow(0 0 30px currentColor); }
+.panic-dis-title { font-family:'Syne',sans-serif; font-size:2.2rem; font-weight:800; color:var(--dis-hue); text-align:center; }
+.panic-subtitle { color:rgba(255,255,255,.7); font-size:.9rem; text-align:center; }
+.panic-grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; width:100%; max-width:700px; margin-bottom:20px; }
+@media(max-width:600px) { .panic-grid { grid-template-columns:1fr; } }
+.panic-card { background:rgba(255,255,255,.05); border:1px solid rgba(255,255,255,.12); border-radius:var(--radius-lg); padding:20px; }
+.panic-card-title { font-family:'Syne',sans-serif; font-weight:800; font-size:.8rem; letter-spacing:.1em; text-transform:uppercase; color:var(--dis-hue); margin-bottom:12px; }
+.panic-steps { list-style:none; display:flex; flex-direction:column; gap:8px; }
+.panic-step { display:flex; gap:10px; align-items:flex-start; font-size:.85rem; line-height:1.5; }
+.panic-step-num { width:22px; height:22px; min-width:22px; background:var(--danger); border-radius:6px; display:grid; place-items:center; font-size:.65rem; font-weight:800; color:#fff; }
+.panic-contacts { display:flex; flex-direction:column; gap:8px; }
+.panic-contact { display:flex; align-items:center; justify-content:space-between; padding:10px 14px; background:rgba(255,255,255,.06); border-radius:10px; }
+.panic-contact-name { font-size:.85rem; font-weight:600; }
+.panic-contact-num { font-family:'Syne',sans-serif; font-weight:800; color:var(--danger); font-size:1rem; }
+.panic-close-btn { margin-top:8px; padding:14px 40px; background:var(--danger); border:none; color:#fff; font-family:'Syne',sans-serif; font-weight:800; font-size:1rem; border-radius:99px; cursor:pointer; transition:opacity .2s; }
+.panic-close-btn:hover { opacity:.85; }
+.panic-voice-btn { padding:10px 24px; background:rgba(255,255,255,.1); border:1px solid rgba(255,255,255,.2); color:#fff; font-family:'Syne',sans-serif; font-weight:700; font-size:.82rem; border-radius:99px; cursor:pointer; transition:all .2s; display:flex; align-items:center; gap:8px; }
+.panic-voice-btn:hover { background:rgba(255,255,255,.18); }
+
+/* ════════════════════════════════════════════
+   SAFETY PANEL
+════════════════════════════════════════════ */
+#safety-panel { display:none; }
+#safety-panel.visible { display:block; }
+.disaster-hero { display:flex; align-items:center; gap:14px; margin-bottom:20px; padding:16px; background:var(--surface2); border-radius:var(--radius); border:1px solid var(--border); }
+.disaster-icon-big { font-size:2.4rem; line-height:1; filter:drop-shadow(0 0 12px var(--dis-hue)); transition:filter .5s; }
+.disaster-hero-text h2 { font-family:'Syne',sans-serif; font-size:1.25rem; font-weight:800; color:var(--dis-hue); transition:color .5s; }
+.disaster-hero-text p { font-size:.8rem; color:var(--muted); margin-top:3px; }
+.actions-list { list-style:none; display:flex; flex-direction:column; gap:10px; }
+.action-item { display:flex; align-items:flex-start; gap:12px; padding:14px 16px; background:var(--surface2); border-radius:var(--radius); border:1px solid var(--border); animation:slideIn .35s ease both; }
+.action-item:nth-child(1){animation-delay:.05s} .action-item:nth-child(2){animation-delay:.12s} .action-item:nth-child(3){animation-delay:.19s} .action-item:nth-child(4){animation-delay:.26s} .action-item:nth-child(5){animation-delay:.33s}
+@keyframes slideIn { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:none} }
+.action-num { width:26px; height:26px; border-radius:8px; background:var(--dis-hue); color:#fff; font-family:'Syne',sans-serif; font-weight:800; font-size:.75rem; display:grid; place-items:center; flex-shrink:0; transition:background .5s; }
+.action-text { font-size:.9rem; line-height:1.45; padding-top:4px; }
+
+/* ════════════════════════════════════════════
+   EVACUATION BFS MAP
+════════════════════════════════════════════ */
+.evac-grid-wrap { overflow-x:auto; padding-bottom:10px; }
+.evac-grid { display:grid; grid-template-columns:repeat(12,38px); gap:3px; margin:0 auto; width:fit-content; }
+.evac-cell { width:38px; height:38px; border-radius:7px; background:var(--surface2); border:1px solid var(--border); display:grid; place-items:center; font-size:.85rem; transition:background .3s,border-color .3s; position:relative; cursor:default; }
+.evac-cell.wall { background:#0a0d14; border-color:rgba(255,255,255,.04); }
+.evac-cell.start { background:rgba(59,130,246,.3); border-color:var(--accent2); }
+.evac-cell.exit { background:rgba(34,197,94,.25); border-color:var(--success); }
+.evac-cell.path { background:rgba(249,115,22,.3); border-color:var(--dis-hue); animation:pathReveal .3s ease; }
+.evac-cell.visited { background:rgba(249,115,22,.08); }
+.evac-cell.current { background:rgba(249,115,22,.6); border-color:var(--dis-hue); box-shadow:0 0 16px var(--dis-glow); }
+@keyframes pathReveal { from{transform:scale(.5);opacity:0} to{transform:scale(1);opacity:1} }
+.evac-legend { display:flex; flex-wrap:wrap; gap:12px; margin-top:14px; }
+.evac-legend-item { display:flex; align-items:center; gap:6px; font-size:.72rem; color:var(--muted); }
+.evac-legend-box { width:16px; height:16px; border-radius:4px; border:1px solid var(--border); }
+.evac-controls { display:flex; gap:10px; flex-wrap:wrap; margin-top:14px; }
+.evac-btn { padding:9px 18px; border-radius:99px; border:1px solid var(--border); background:var(--surface2); color:var(--text); font-family:'Syne',sans-serif; font-size:.75rem; font-weight:700; cursor:pointer; transition:all .2s; }
+.evac-btn:hover { border-color:var(--dis-hue); color:var(--dis-hue); }
+.evac-btn.primary { background:var(--dis-hue); border-color:var(--dis-hue); color:#fff; box-shadow:0 4px 16px var(--dis-glow); }
+.evac-result { margin-top:12px; padding:12px 16px; background:var(--surface2); border-radius:var(--radius); font-size:.82rem; color:var(--muted); border:1px solid var(--border); }
+
+/* ════════════════════════════════════════════
+   CHECKLIST & SCORE
+════════════════════════════════════════════ */
+.score-wrap { display:flex; align-items:center; gap:20px; padding:18px; background:var(--surface2); border-radius:var(--radius); border:1px solid var(--border); margin-bottom:18px; }
+.ring-svg { flex-shrink:0; }
+.ring-bg { fill:none; stroke:var(--surface); stroke-width:6; }
+.ring-arc { fill:none; stroke:var(--success); stroke-width:6; stroke-linecap:round; transform:rotate(-90deg); transform-origin:50% 50%; transition:stroke-dashoffset .6s cubic-bezier(.4,0,.2,1),stroke .4s; }
+.ring-text { font-family:'Syne',sans-serif; font-weight:800; font-size:.9rem; fill:var(--text); text-anchor:middle; dominant-baseline:middle; }
+.ring-sub { font-size:.35rem; fill:var(--muted); text-anchor:middle; font-family:'DM Sans',sans-serif; }
+.score-info h3 { font-family:'Syne',sans-serif; font-size:1.05rem; font-weight:700; }
+.score-info p { font-size:.8rem; color:var(--muted); margin-top:4px; }
+.score-bar-wrap { margin-top:12px; }
+.score-bar-track { height:6px; background:var(--surface); border-radius:99px; overflow:hidden; }
+.score-bar-fill { height:100%; background:linear-gradient(90deg,var(--accent2),var(--success)); border-radius:99px; transition:width .6s cubic-bezier(.4,0,.2,1); }
+.checklist { display:flex; flex-direction:column; gap:10px; }
+.check-item { display:flex; align-items:center; gap:13px; padding:13px 16px; background:var(--surface2); border-radius:var(--radius); border:1px solid var(--border); cursor:pointer; transition:border-color .2s,background .2s; user-select:none; }
+.check-item:hover { border-color:var(--dis-hue); }
+.check-item.checked { border-color:var(--success); background:rgba(34,197,94,.07); }
+.check-box { width:22px; height:22px; border-radius:7px; border:2px solid var(--border); background:var(--surface); display:grid; place-items:center; flex-shrink:0; transition:background .2s,border-color .2s,transform .15s; color:#fff; }
+.check-item.checked .check-box { background:var(--success); border-color:var(--success); transform:scale(1.1); }
+.check-label { font-size:.88rem; line-height:1.35; }
+
+/* ════════════════════════════════════════════
+   AI ASSISTANT CHATBOT
+════════════════════════════════════════════ */
+.chat-messages { display:flex; flex-direction:column; gap:12px; max-height:320px; overflow-y:auto; padding:4px 0; margin-bottom:16px; }
+.chat-msg { display:flex; gap:10px; align-items:flex-start; animation:slideIn .25s ease; }
+.chat-msg.user { flex-direction:row-reverse; }
+.chat-bubble { max-width:80%; padding:12px 16px; border-radius:var(--radius); font-size:.85rem; line-height:1.5; }
+.chat-msg.bot .chat-bubble { background:var(--surface2); border:1px solid var(--border); border-bottom-left-radius:4px; }
+.chat-msg.user .chat-bubble { background:var(--dis-hue); color:#fff; border-bottom-right-radius:4px; }
+.chat-avatar { width:30px; height:30px; min-width:30px; border-radius:50%; background:var(--dis-hue); display:grid; place-items:center; font-size:.9rem; }
+.chat-avatar.user-av { background:var(--accent2); }
+.chat-input-row { display:flex; gap:10px; }
+.chat-input { flex:1; background:var(--surface2); border:1px solid var(--border); border-radius:99px; color:var(--text); font-family:'DM Sans',sans-serif; font-size:.88rem; padding:11px 18px; outline:none; transition:border-color .2s; }
+.chat-input:focus { border-color:var(--dis-hue); }
+.chat-input::placeholder { color:var(--muted); }
+.chat-send-btn { width:42px; height:42px; border-radius:50%; background:var(--dis-hue); border:none; color:#fff; font-size:1.1rem; cursor:pointer; display:grid; place-items:center; transition:opacity .2s,transform .15s; box-shadow:0 4px 14px var(--dis-glow); }
+.chat-send-btn:hover { opacity:.85; transform:scale(1.08); }
+.chat-suggestions { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:14px; }
+.chat-sug { padding:6px 12px; border-radius:99px; background:var(--surface2); border:1px solid var(--border); font-size:.72rem; cursor:pointer; color:var(--muted); transition:all .2s; }
+.chat-sug:hover { border-color:var(--dis-hue); color:var(--text); }
+
+/* ════════════════════════════════════════════
+   CAMPUS MAP
+════════════════════════════════════════════ */
+.campus-map-wrap { position:relative; width:100%; background:var(--surface2); border-radius:var(--radius); border:1px solid var(--border); overflow:hidden; min-height:320px; }
+.campus-map-svg { width:100%; height:auto; display:block; }
+.map-legend { display:flex; flex-wrap:wrap; gap:14px; margin-top:14px; }
+.map-legend-item { display:flex; align-items:center; gap:7px; font-size:.74rem; color:var(--muted); }
+.map-legend-dot { width:12px; height:12px; border-radius:50%; flex-shrink:0; }
+.map-tooltip { position:absolute; background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:8px 12px; font-size:.78rem; pointer-events:none; opacity:0; transition:opacity .2s; z-index:10; max-width:160px; }
+.map-tooltip.show { opacity:1; }
+
+/* ════════════════════════════════════════════
+   ALERT BROADCAST SYSTEM
+════════════════════════════════════════════ */
+.alert-banner { display:none; padding:12px 16px; border-radius:var(--radius); font-size:.83rem; font-weight:500; border:1px solid; animation:pulse 2s infinite; align-items:center; gap:10px; }
+.alert-banner.visible { display:flex; }
+.alert-banner.danger { background:rgba(239,68,68,.1); border-color:var(--danger); color:#fca5a5; }
+.alert-banner.warn { background:rgba(234,179,8,.1); border-color:var(--warn); color:#fde68a; }
+.alert-banner.info { background:rgba(59,130,246,.1); border-color:var(--accent2); color:#93c5fd; }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.7} }
+.broadcast-presets { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:14px; }
+.broadcast-preset { padding:7px 14px; border-radius:8px; border:1px solid var(--border); background:var(--surface2); font-size:.75rem; cursor:pointer; color:var(--muted); transition:all .2s; }
+.broadcast-preset:hover { border-color:var(--dis-hue); color:var(--text); }
+.broadcast-input { width:100%; background:var(--surface2); border:1px solid var(--border); border-radius:var(--radius); color:var(--text); font-family:'DM Sans',sans-serif; font-size:.88rem; padding:12px 16px; outline:none; margin-bottom:10px; transition:border-color .2s; }
+.broadcast-input:focus { border-color:var(--dis-hue); }
+.broadcast-btn { padding:11px 24px; background:var(--danger); border:none; color:#fff; font-family:'Syne',sans-serif; font-weight:700; font-size:.82rem; border-radius:99px; cursor:pointer; transition:opacity .2s; }
+.broadcast-btn:hover { opacity:.85; }
+.broadcast-log { margin-top:14px; display:flex; flex-direction:column; gap:8px; max-height:200px; overflow-y:auto; }
+.broadcast-msg { padding:10px 14px; border-radius:10px; font-size:.8rem; border:1px solid var(--border); background:var(--surface2); display:flex; gap:10px; align-items:flex-start; }
+.broadcast-time { font-size:.68rem; color:var(--muted); white-space:nowrap; margin-top:2px; }
+.broadcast-text { flex:1; line-height:1.4; }
+
+/* ════════════════════════════════════════════
+   DISASTER TRAINING SIMULATION
+════════════════════════════════════════════ */
+.quiz-card { background:var(--surface2); border:1px solid var(--border); border-radius:var(--radius-lg); padding:22px; }
+.quiz-scenario { font-size:.82rem; color:var(--muted); margin-bottom:6px; font-weight:600; text-transform:uppercase; letter-spacing:.06em; }
+.quiz-question { font-family:'Syne',sans-serif; font-size:1.05rem; font-weight:700; margin-bottom:18px; line-height:1.4; }
+.quiz-options { display:flex; flex-direction:column; gap:10px; }
+.quiz-option { padding:14px 18px; border-radius:var(--radius); border:1px solid var(--border); background:var(--surface); cursor:pointer; transition:all .2s; font-size:.88rem; display:flex; align-items:center; gap:12px; }
+.quiz-option:hover { border-color:var(--dis-hue); background:rgba(249,115,22,.05); }
+.quiz-option.correct { border-color:var(--success); background:rgba(34,197,94,.1); color:var(--success); }
+.quiz-option.wrong { border-color:var(--danger); background:rgba(239,68,68,.1); color:var(--danger); }
+.quiz-option.disabled { pointer-events:none; opacity:.6; }
+.quiz-option.disabled.correct { opacity:1; }
+.quiz-opt-key { width:28px; height:28px; border-radius:8px; background:var(--surface2); border:1px solid var(--border); display:grid; place-items:center; font-family:'Syne',sans-serif; font-weight:800; font-size:.75rem; flex-shrink:0; transition:all .2s; }
+.quiz-option.correct .quiz-opt-key { background:var(--success); border-color:var(--success); color:#fff; }
+.quiz-option.wrong .quiz-opt-key { background:var(--danger); border-color:var(--danger); color:#fff; }
+.quiz-feedback { margin-top:14px; padding:14px 16px; border-radius:var(--radius); font-size:.85rem; line-height:1.5; display:none; }
+.quiz-feedback.show { display:block; }
+.quiz-feedback.correct { background:rgba(34,197,94,.1); border:1px solid rgba(34,197,94,.3); color:#86efac; }
+.quiz-feedback.wrong { background:rgba(239,68,68,.1); border:1px solid rgba(239,68,68,.3); color:#fca5a5; }
+.quiz-nav { display:flex; align-items:center; justify-content:space-between; margin-top:16px; gap:12px; }
+.quiz-progress { font-size:.78rem; color:var(--muted); }
+.quiz-score-banner { text-align:center; padding:28px; display:none; }
+.quiz-score-banner.show { display:block; }
+.quiz-score-big { font-family:'Syne',sans-serif; font-size:3rem; font-weight:800; color:var(--dis-hue); }
+.quiz-score-label { font-size:.9rem; color:var(--muted); margin-top:6px; }
+
+/* ════════════════════════════════════════════
+   SAFETY DASHBOARD
+════════════════════════════════════════════ */
+.dash-items { display:flex; flex-direction:column; gap:14px; }
+.dash-item { display:flex; flex-direction:column; gap:6px; }
+.dash-item-header { display:flex; justify-content:space-between; align-items:center; }
+.dash-item-name { font-size:.88rem; font-weight:500; display:flex; align-items:center; gap:8px; }
+.dash-pct { font-family:'Syne',sans-serif; font-size:.82rem; font-weight:800; }
+.dash-bar-track { height:8px; background:var(--surface); border-radius:99px; overflow:hidden; }
+.dash-bar-fill { height:100%; border-radius:99px; transition:width 1s cubic-bezier(.4,0,.2,1); }
+
+/* ════════════════════════════════════════════
+   EMERGENCY KIT CHECKLIST
+════════════════════════════════════════════ */
+.kit-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(160px,1fr)); gap:10px; }
+.kit-item { background:var(--surface2); border:1px solid var(--border); border-radius:var(--radius); padding:14px 12px; display:flex; flex-direction:column; align-items:center; gap:8px; cursor:pointer; transition:all .2s; text-align:center; user-select:none; }
+.kit-item:hover { border-color:var(--dis-hue); }
+.kit-item.checked { border-color:var(--success); background:rgba(34,197,94,.07); }
+.kit-icon { font-size:1.8rem; filter:grayscale(1); transition:filter .3s; }
+.kit-item.checked .kit-icon { filter:grayscale(0); }
+.kit-name { font-size:.78rem; font-weight:600; line-height:1.3; }
+.kit-check { width:20px; height:20px; border-radius:50%; border:2px solid var(--border); background:var(--surface); display:grid; place-items:center; transition:all .2s; }
+.kit-item.checked .kit-check { background:var(--success); border-color:var(--success); color:#fff; font-size:.65rem; }
+.kit-score { margin-top:14px; text-align:center; }
+.kit-score-num { font-family:'Syne',sans-serif; font-size:1.6rem; font-weight:800; }
+.kit-score-label { font-size:.78rem; color:var(--muted); margin-top:2px; }
+
+/* ════════════════════════════════════════════
+   GEOLOCATION
+════════════════════════════════════════════ */
+.geo-status { padding:12px 16px; background:var(--surface2); border-radius:var(--radius); font-size:.83rem; margin-bottom:14px; border:1px solid var(--border); display:flex; align-items:center; gap:10px; }
+.geo-btn { padding:11px 22px; background:var(--accent2); border:none; color:#fff; font-family:'Syne',sans-serif; font-weight:700; font-size:.82rem; border-radius:99px; cursor:pointer; transition:opacity .2s; }
+.geo-btn:hover { opacity:.85; }
+.geo-services { display:grid; grid-template-columns:repeat(auto-fill,minmax(180px,1fr)); gap:12px; margin-top:14px; }
+.geo-service-card { background:var(--surface2); border:1px solid var(--border); border-radius:var(--radius); padding:16px; transition:all .2s; }
+.geo-service-card:hover { border-color:var(--accent2); transform:translateY(-2px); }
+.geo-service-icon { font-size:1.6rem; margin-bottom:8px; }
+.geo-service-name { font-family:'Syne',sans-serif; font-weight:700; font-size:.85rem; margin-bottom:4px; }
+.geo-service-dist { font-size:.75rem; color:var(--muted); }
+.geo-service-type { font-size:.7rem; padding:3px 8px; border-radius:99px; display:inline-block; margin-top:6px; font-weight:600; }
+
+/* ════════════════════════════════════════════
+   SEVERITY METER
+════════════════════════════════════════════ */
+.severity-slider-wrap { padding:16px 0; }
+.severity-slider { -webkit-appearance:none; width:100%; height:8px; border-radius:99px; outline:none; cursor:pointer; background:linear-gradient(90deg,var(--success),var(--warn),var(--danger)); transition:all .2s; }
+.severity-slider::-webkit-slider-thumb { -webkit-appearance:none; width:24px; height:24px; border-radius:50%; background:#fff; box-shadow:0 2px 12px rgba(0,0,0,.5); cursor:pointer; border:3px solid var(--dis-hue); transition:transform .15s; }
+.severity-slider::-webkit-slider-thumb:hover { transform:scale(1.2); }
+.severity-labels { display:flex; justify-content:space-between; font-size:.7rem; color:var(--muted); margin-top:8px; }
+.severity-level { padding:14px 18px; border-radius:var(--radius); border:1px solid var(--border); background:var(--surface2); margin-top:14px; font-size:.88rem; line-height:1.5; transition:all .3s; }
+.severity-level.low { border-color:var(--success); background:rgba(34,197,94,.07); }
+.severity-level.medium { border-color:var(--warn); background:rgba(234,179,8,.07); }
+.severity-level.high { border-color:var(--danger); background:rgba(239,68,68,.07); }
+.severity-badge { font-family:'Syne',sans-serif; font-weight:800; font-size:.75rem; letter-spacing:.1em; text-transform:uppercase; padding:4px 10px; border-radius:99px; display:inline-block; margin-bottom:8px; }
+.severity-badge.low { background:rgba(34,197,94,.2); color:var(--success); }
+.severity-badge.medium { background:rgba(234,179,8,.2); color:var(--warn); }
+.severity-badge.high { background:rgba(239,68,68,.2); color:var(--danger); }
+
+/* ════════════════════════════════════════════
+   CERTIFICATE
+════════════════════════════════════════════ */
+.cert-preview { background:linear-gradient(135deg,#0f172a,#1e293b); border:2px solid var(--warn); border-radius:var(--radius-lg); padding:32px 28px; text-align:center; position:relative; overflow:hidden; margin-bottom:16px; }
+.cert-preview::before { content:'🛡️'; position:absolute; top:-20px; left:-20px; font-size:8rem; opacity:.05; }
+.cert-preview::after { content:'🛡️'; position:absolute; bottom:-20px; right:-20px; font-size:8rem; opacity:.05; }
+.cert-logo { font-size:2.8rem; margin-bottom:8px; }
+.cert-title { font-family:'Syne',sans-serif; font-size:1.4rem; font-weight:800; color:var(--warn); letter-spacing:.08em; margin-bottom:4px; }
+.cert-subtitle { font-size:.78rem; color:rgba(255,255,255,.5); text-transform:uppercase; letter-spacing:.1em; margin-bottom:20px; }
+.cert-recipient { font-family:'Syne',sans-serif; font-size:.82rem; color:rgba(255,255,255,.5); margin-bottom:6px; }
+.cert-name { font-family:'Syne',sans-serif; font-size:1.6rem; font-weight:800; color:#fff; margin-bottom:4px; }
+.cert-score { display:inline-block; padding:6px 18px; border-radius:99px; background:rgba(234,179,8,.15); border:1px solid rgba(234,179,8,.3); color:var(--warn); font-weight:700; font-size:.85rem; margin-bottom:20px; }
+.cert-desc { font-size:.8rem; color:rgba(255,255,255,.6); line-height:1.6; max-width:400px; margin:0 auto 20px; }
+.cert-date { font-size:.72rem; color:rgba(255,255,255,.35); }
+.cert-border-dots { display:flex; justify-content:space-between; opacity:.2; margin-top:18px; }
+.cert-btn { padding:12px 28px; background:var(--warn); border:none; color:#000; font-family:'Syne',sans-serif; font-weight:800; font-size:.88rem; border-radius:99px; cursor:pointer; transition:all .2s; }
+.cert-btn:hover { opacity:.85; transform:translateY(-2px); }
+.cert-btn:disabled { opacity:.4; cursor:not-allowed; transform:none; }
+.cert-name-input { width:100%; background:var(--surface2); border:1px solid var(--border); border-radius:var(--radius); color:var(--text); font-family:'DM Sans',sans-serif; font-size:.9rem; padding:12px 16px; outline:none; margin-bottom:12px; transition:border-color .2s; }
+.cert-name-input:focus { border-color:var(--warn); }
+
+/* ════════════════════════════════════════════
+   OFFLINE SUPPORT INFO
+════════════════════════════════════════════ */
+.offline-steps { display:flex; flex-direction:column; gap:10px; }
+.offline-step { display:flex; gap:14px; padding:14px 16px; background:var(--surface2); border-radius:var(--radius); border:1px solid var(--border); font-size:.85rem; line-height:1.5; }
+.offline-step-icon { font-size:1.4rem; flex-shrink:0; }
+.offline-step-text h4 { font-family:'Syne',sans-serif; font-weight:700; font-size:.82rem; margin-bottom:4px; }
+.offline-step-text p { color:var(--muted); font-size:.8rem; }
+.offline-code { background:#0a0d14; border:1px solid var(--border); border-radius:var(--radius); padding:16px; font-family:'Courier New',monospace; font-size:.75rem; color:#9ece6a; line-height:1.8; overflow-x:auto; margin-top:10px; }
+
+/* ════════════════════════════════════════════
+   CONTACTS & WHATSAPP
+════════════════════════════════════════════ */
+.contacts-grid { display:flex; flex-direction:column; gap:10px; }
+.contact-card { background:var(--surface2); border:1px solid var(--border); border-radius:var(--radius); padding:13px 16px; cursor:pointer; transition:all .2s; display:flex; flex-direction:row; align-items:center; gap:13px; }
+.contact-card:hover { border-color:var(--dis-hue); transform:translateY(-2px); box-shadow:0 8px 28px rgba(0,0,0,.3); }
+.contact-icon { width:46px; height:46px; border-radius:12px; display:grid; place-items:center; font-size:1.4rem; border:1px solid var(--border); }
+.contact-name { font-family:'Syne',sans-serif; font-size:.73rem; font-weight:700; line-height:1.2; }
+.contact-number { font-size:.9rem; font-weight:500; color:var(--dis-hue); transition:color .5s; }
+.whatsapp-card { background:var(--surface); border:1px solid rgba(37,211,102,0.3); border-radius:var(--radius-lg); padding:20px 24px; display:flex; align-items:center; gap:18px; position:relative; overflow:hidden; transition:border-color .3s,box-shadow .3s; }
+.whatsapp-card::before { content:''; position:absolute; top:0; left:0; right:0; height:3px; background:#25d366; }
+.whatsapp-card:hover { border-color:rgba(37,211,102,0.6); box-shadow:0 0 32px rgba(37,211,102,0.1); }
+.whatsapp-icon-wrap { width:52px; height:52px; background:#25d366; border-radius:16px; display:grid; place-items:center; flex-shrink:0; box-shadow:0 0 20px rgba(37,211,102,0.35); }
+.whatsapp-info { flex:1; }
+.whatsapp-info h3 { font-family:'Syne',sans-serif; font-size:.95rem; font-weight:800; margin-bottom:3px; }
+.whatsapp-info p { font-size:.78rem; color:var(--muted); }
+.whatsapp-info .wa-number { font-size:.8rem; font-weight:600; color:#25d366; margin-top:2px; }
+.whatsapp-btn { display:flex; align-items:center; gap:9px; background:#25d366; border:none; border-radius:var(--radius); padding:11px 20px; font-family:'Syne',sans-serif; font-size:.82rem; font-weight:700; color:#fff; cursor:pointer; text-decoration:none; transition:all .2s; white-space:nowrap; flex-shrink:0; box-shadow:0 4px 16px rgba(37,211,102,0.3); }
+.whatsapp-btn:hover { background:#1ebe5d; transform:translateY(-2px); box-shadow:0 8px 24px rgba(37,211,102,0.4); }
+@media(max-width:600px) { .whatsapp-card { flex-wrap:wrap; } .whatsapp-btn { width:100%; justify-content:center; } }
+
+/* ════════════════════════════════════════════
+   JSON OUTPUT
+════════════════════════════════════════════ */
+.json-wrap { background:#0a0d14; border:1px solid var(--border); border-radius:var(--radius); padding:18px; overflow-x:auto; }
+.json-wrap pre { font-family:'Courier New',monospace; font-size:.78rem; line-height:1.7; color:#a9b1d6; white-space:pre; }
+.json-key { color:#7aa2f7; }
+.json-str { color:#9ece6a; }
+.json-num { color:#ff9e64; }
+.json-copy-btn { margin-top:10px; background:var(--surface2); border:1px solid var(--border); color:var(--muted); font-family:'DM Sans',sans-serif; font-size:.75rem; padding:7px 15px; border-radius:8px; cursor:pointer; transition:all .2s; }
+.json-copy-btn:hover { border-color:var(--dis-hue); color:var(--text); }
+
+/* ════════════════════════════════════════════
+   VOICE BUTTON
+════════════════════════════════════════════ */
+.voice-btn { display:flex; align-items:center; gap:9px; padding:10px 20px; background:var(--surface2); border:1px solid var(--border); color:var(--text); font-family:'Syne',sans-serif; font-weight:700; font-size:.78rem; border-radius:99px; cursor:pointer; transition:all .2s; margin-top:14px; }
+.voice-btn:hover { border-color:var(--dis-hue); }
+.voice-btn.speaking { border-color:var(--success); color:var(--success); animation:pulse 1s infinite; }
+.voice-btn .voice-icon { font-size:1rem; }
+
+/* ════════════════════════════════════════════
+   FOOTER & MISC
+════════════════════════════════════════════ */
+footer { position:relative; z-index:1; text-align:center; padding:24px 20px; color:var(--muted); font-size:.72rem; border-top:1px solid var(--border); line-height:2.2; }
+.fade-up { opacity:0; transform:translateY(18px); transition:opacity .5s ease,transform .5s ease; }
+.fade-up.in { opacity:1; transform:none; }
+.section-divider { height:1px; background:var(--border); margin:4px 0; }
+.tabs-row { display:flex; background:var(--surface2); border-radius:10px; padding:4px; gap:4px; margin-bottom:18px; flex-wrap:wrap; }
+.tab-btn { flex:1; min-width:80px; padding:8px 12px; border:none; border-radius:7px; background:transparent; color:var(--muted); font-family:'Syne',sans-serif; font-size:.72rem; font-weight:700; cursor:pointer; transition:all .2s; white-space:nowrap; }
+.tab-btn.active { background:var(--surface); color:var(--text); box-shadow:0 2px 8px rgba(0,0,0,.3); }
+.tab-panel { display:none; }
+.tab-panel.active { display:block; }
+.small-btn { padding:8px 16px; border-radius:8px; border:1px solid var(--border); background:var(--surface2); color:var(--muted); font-family:'Syne',sans-serif; font-size:.72rem; font-weight:700; cursor:pointer; transition:all .2s; }
+.small-btn:hover { border-color:var(--dis-hue); color:var(--text); }
+.small-btn.danger { background:rgba(239,68,68,.12); border-color:var(--danger); color:var(--danger); }
+@media(max-width:480px) { .card { padding:18px; } header { padding:12px 14px; gap:8px; } .modal { padding:22px 16px; } .otp-box { width:40px; height:48px; font-size:1.2rem; } }
+</style>
+</head>
+<body>
+
+<!-- ══ PANIC OVERLAY ══ -->
+<div class="panic-overlay" id="panic-overlay">
+  <div class="panic-header">
+    <div class="panic-alert-bar" id="panic-alert-bar">⚠️ EMERGENCY ALERT — EVACUATE NOW ⚠️</div>
+    <div class="panic-dis-icon" id="panic-dis-icon">🚨</div>
+    <div class="panic-dis-title" id="panic-dis-title">EMERGENCY ACTIVATED</div>
+    <div class="panic-subtitle" id="panic-subtitle">Follow the instructions below. Stay calm.</div>
+  </div>
+  <div class="panic-grid" id="panic-grid">
+    <div class="panic-card">
+      <div class="panic-card-title">🛡️ Immediate Steps</div>
+      <ul class="panic-steps" id="panic-steps"></ul>
+    </div>
+    <div class="panic-card">
+      <div class="panic-card-title">📞 Emergency Contacts</div>
+      <div class="panic-contacts" id="panic-contacts"></div>
+    </div>
+  </div>
+  <div style="display:flex;gap:12px;flex-wrap:wrap;justify-content:center;margin-bottom:20px;">
+    <button class="panic-voice-btn" onclick="speakEmergencyInstructions()">🔊 Read Instructions Aloud</button>
+    <button class="panic-voice-btn" onclick="stopSpeech()">⏹ Stop Voice</button>
+  </div>
+  <button class="panic-close-btn" onclick="deactivatePanic()">✕ Deactivate Emergency Mode</button>
+</div>
+
+<!-- ══ AUTH MODAL ══ -->
+<div class="modal-overlay" id="auth-modal">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal()">✕</button>
+    <div class="modal-logo" id="modal-logo">🛡️</div>
+    <h2>Join SafeCampus</h2>
+    <p class="modal-sub">Sign up or log in to track your preparedness</p>
+    <div class="auth-tabs">
+      <button class="auth-tab active" onclick="switchTab('signup')">Sign Up</button>
+      <button class="auth-tab" onclick="switchTab('login')">Log In</button>
+    </div>
+    <button class="google-btn" onclick="signInWithGoogle()">
+      <svg width="20" height="20" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.35-8.16 2.35-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
+      Continue with Google
+    </button>
+    <div class="auth-divider">or use email OTP</div>
+    <div class="auth-panel active" id="panel-signup">
+      <div class="otp-step active" id="signup-step1">
+        <div class="field-group">
+          <div class="field"><label>Full Name</label><input type="text" id="signup-name" placeholder="e.g. Arjun Sharma"/></div>
+          <div class="field"><label>Email Address</label><input type="email" id="signup-email" placeholder="you@university.edu"/></div>
+        </div>
+        <button class="btn-primary" id="send-otp-btn" onclick="sendOTP()">Send OTP →</button>
+        <div class="auth-msg" id="signup-msg"></div>
+      </div>
+      <div class="otp-step" id="signup-step2">
+        <p style="font-size:.82rem;color:var(--muted);text-align:center;margin-bottom:14px">Enter the 6-digit code sent to <strong id="otp-email-display" style="color:var(--text)"></strong></p>
+        <div class="otp-group" id="otp-group">
+          <input class="otp-box" maxlength="1" type="text" inputmode="numeric"/>
+          <input class="otp-box" maxlength="1" type="text" inputmode="numeric"/>
+          <input class="otp-box" maxlength="1" type="text" inputmode="numeric"/>
+          <input class="otp-box" maxlength="1" type="text" inputmode="numeric"/>
+          <input class="otp-box" maxlength="1" type="text" inputmode="numeric"/>
+          <input class="otp-box" maxlength="1" type="text" inputmode="numeric"/>
+        </div>
+        <button class="btn-primary" id="verify-otp-btn" onclick="verifyOTP()">Verify & Enter →</button>
+        <div class="auth-msg" id="otp-msg"></div>
+        <div class="resend-row">Didn't get it? <span class="resend-link" id="resend-link" onclick="resendOTP()">Resend OTP</span><span id="resend-timer" style="display:none"></span></div>
+      </div>
+    </div>
+    <div class="auth-panel" id="panel-login">
+      <div class="otp-step active" id="login-step1">
+        <div class="field"><label>Email Address</label><input type="email" id="login-email" placeholder="you@university.edu"/></div>
+        <button class="btn-primary" id="send-login-otp-btn" onclick="sendLoginOTP()">Send Login OTP →</button>
+        <div class="auth-msg" id="login-msg"></div>
+      </div>
+      <div class="otp-step" id="login-step2">
+        <p style="font-size:.82rem;color:var(--muted);text-align:center;margin-bottom:14px">Enter the 6-digit code sent to <strong id="login-email-display" style="color:var(--text)"></strong></p>
+        <div class="otp-group" id="login-otp-group">
+          <input class="otp-box" maxlength="1" type="text" inputmode="numeric"/>
+          <input class="otp-box" maxlength="1" type="text" inputmode="numeric"/>
+          <input class="otp-box" maxlength="1" type="text" inputmode="numeric"/>
+          <input class="otp-box" maxlength="1" type="text" inputmode="numeric"/>
+          <input class="otp-box" maxlength="1" type="text" inputmode="numeric"/>
+          <input class="otp-box" maxlength="1" type="text" inputmode="numeric"/>
+        </div>
+        <button class="btn-primary" onclick="verifyLoginOTP()">Verify & Log In →</button>
+        <div class="auth-msg" id="login-otp-msg"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ HEADER ══ -->
+<header>
+  <div class="logo-icon" id="logo-icon">🛡️</div>
+  <div class="header-text"><h1>SafeCampus</h1><p>Disaster Preparedness System</p></div>
+  <div class="header-spacer"></div>
+  <div class="datetime-pill"><span class="day-chip" id="live-day">MON</span><span id="live-date">1 Jan 2025</span>&nbsp;·&nbsp;<span id="live-time">00:00:00</span></div>
+  <button class="theme-toggle" id="theme-toggle" onclick="toggleTheme()" aria-label="Toggle theme">
+    <span class="theme-toggle-bg" id="theme-toggle-bg">🌙</span>
+    <div class="theme-toggle-thumb" id="theme-toggle-thumb">☀️</div>
+  </button>
+  <button class="auth-btn" id="auth-btn" onclick="openModal()">
+    <div class="avatar" id="header-avatar">?</div>
+    <span id="header-auth-label">Sign Up</span>
+  </button>
+  <div class="status-badge" id="status-badge">Standby</div>
+</header>
+
+<!-- ══ ALERT BANNER ══ -->
+<div class="alert-banner danger" id="alert-banner" style="margin:0 20px;margin-top:10px;position:relative;z-index:2;">
+  <span>⚠️</span><span id="alert-text">Emergency scenario active.</span>
+  <button onclick="document.getElementById('alert-banner').classList.remove('visible')" style="margin-left:auto;background:none;border:none;cursor:pointer;color:inherit;font-size:.9rem;">✕</button>
+</div>
+
+<!-- ══ MAIN ══ -->
+<main class="container">
+
+  <!-- ══ SECTION 1: DISASTER SELECTOR + PANIC BUTTON ══ -->
+  <div class="grid-2 fade-up">
+    <div class="card">
+      <div class="card-label"><span class="dot"></span>Step 1 — Select Disaster Type</div>
+      <div class="select-wrap">
+        <select class="disaster-select" id="disaster-select">
+          <option value="">— Choose a disaster scenario —</option>
+          <option value="EARTHQUAKE">🌍 EARTHQUAKE</option>
+          <option value="FIRE">🔥 FIRE</option>
+          <option value="FLOOD">🌊 FLOOD</option>
+          <option value="CYCLONE">🌀 CYCLONE</option>
+        </select>
+        <span class="select-arrow">▾</span>
+      </div>
+      <div class="disaster-chips">
+        <div class="chip" data-disaster="EARTHQUAKE">🌍 Earthquake</div>
+        <div class="chip" data-disaster="FIRE">🔥 Fire</div>
+        <div class="chip" data-disaster="FLOOD">🌊 Flood</div>
+        <div class="chip" data-disaster="CYCLONE">🌀 Cyclone</div>
+      </div>
+    </div>
+
+    <!-- 🚨 EMERGENCY PANIC BUTTON (Feature 1) -->
+    <div class="card" style="display:flex;flex-direction:column;align-items:center;justify-content:center;">
+      <div class="card-label"><span class="dot"></span>Emergency Panic Mode</div>
+      <div class="panic-btn-wrap">
+        <button class="panic-btn" id="panic-btn" onclick="activatePanic()">🚨</button>
+        <div class="panic-btn-label">PRESS FOR EMERGENCY</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ SAFETY PANEL (Feature 1 continued + Voice) ══ -->
+  <div class="card fade-up" id="safety-panel">
+    <div class="card-label"><span class="dot"></span>Immediate Safety Actions</div>
+    <div class="disaster-hero">
+      <div class="disaster-icon-big" id="dis-icon">🌍</div>
+      <div class="disaster-hero-text">
+        <h2 id="dis-title">EARTHQUAKE</h2>
+        <p id="dis-subtitle">Follow these steps in order. Stay calm.</p>
+      </div>
+    </div>
+    <ul class="actions-list" id="actions-list"></ul>
+    <!-- Feature 5: Voice Instructions -->
+    <button class="voice-btn" id="voice-btn" onclick="toggleVoice()">
+      <span class="voice-icon">🔊</span>
+      <span id="voice-btn-label">Read Instructions Aloud</span>
+    </button>
+  </div>
+
+  <!-- ══ SECTION 2: PREPAREDNESS + EMERGENCY CONTACTS (Feature 2) ══ -->
+  <div class="grid-2">
+    <div class="card fade-up">
+      <div class="card-label"><span class="dot"></span>Preparedness Checklist — Score</div>
+      <div class="score-wrap">
+        <svg class="ring-svg" width="64" height="64" viewBox="0 0 64 64">
+          <circle class="ring-bg" cx="32" cy="32" r="26"/>
+          <circle class="ring-arc" id="ring-arc" cx="32" cy="32" r="26" stroke-dasharray="163.36" stroke-dashoffset="163.36"/>
+          <text class="ring-text" x="32" y="31" id="ring-pct">0%</text>
+          <text class="ring-sub" x="32" y="42">score</text>
+        </svg>
+        <div class="score-info">
+          <h3 id="score-label">Not Checked</h3>
+          <p id="score-desc">Complete all items to reach 100%.</p>
+          <div class="score-bar-wrap"><div class="score-bar-track"><div class="score-bar-fill" id="score-bar" style="width:0%"></div></div></div>
+        </div>
+      </div>
+      <div class="checklist" id="checklist"></div>
+    </div>
+    <div class="card fade-up">
+      <div class="card-label"><span class="dot"></span>Emergency Contacts</div>
+      <div class="contacts-grid" id="contacts-grid"></div>
+    </div>
+  </div>
+
+  <!-- ══ SAFETY DASHBOARD (Feature 9) ══ -->
+  <div class="card fade-up">
+    <div class="card-label"><span class="dot"></span>Safety Dashboard — Preparedness Levels</div>
+    <div class="dash-items" id="dash-items"></div>
+  </div>
+
+  <!-- ══ SMART EVACUATION ROUTE FINDER (Feature 3) ══ -->
+  <div class="card fade-up">
+    <div class="card-label"><span class="dot"></span>Smart Evacuation Route Finder — BFS Pathfinding</div>
+    <p style="font-size:.82rem;color:var(--muted);margin-bottom:14px;">Blue = Your position · Green = Exits · Orange = Shortest safe route (BFS algorithm)</p>
+    <div class="evac-grid-wrap">
+      <div class="evac-grid" id="evac-grid"></div>
+    </div>
+    <div class="evac-legend">
+      <div class="evac-legend-item"><div class="evac-legend-box" style="background:rgba(59,130,246,.3);border-color:var(--accent2)"></div>You</div>
+      <div class="evac-legend-item"><div class="evac-legend-box" style="background:rgba(34,197,94,.25);border-color:var(--success)"></div>Exit</div>
+      <div class="evac-legend-item"><div class="evac-legend-box" style="background:#0a0d14;border-color:rgba(255,255,255,.04)"></div>Wall</div>
+      <div class="evac-legend-item"><div class="evac-legend-box" style="background:rgba(249,115,22,.3);border-color:var(--dis-hue)"></div>Path</div>
+    </div>
+    <div class="evac-controls">
+      <button class="evac-btn primary" onclick="runBFS()">▶ Find Safest Route</button>
+      <button class="evac-btn" onclick="resetEvacGrid()">↺ Reset</button>
+      <button class="evac-btn" onclick="randomizeStart()">🎲 Random Start</button>
+    </div>
+    <div class="evac-result" id="evac-result">Select your position on the map, then click "Find Safest Route" to run BFS pathfinding.</div>
+  </div>
+
+  <!-- ══ AI CHATBOT + CAMPUS MAP (Feature 4 + 6) ══ -->
+  <div class="grid-2">
+    <div class="card fade-up">
+      <div class="card-label"><span class="dot"></span>AI Disaster Safety Assistant</div>
+      <div class="chat-suggestions" id="chat-suggestions"></div>
+      <div class="chat-messages" id="chat-messages"></div>
+      <div class="chat-input-row">
+        <input class="chat-input" id="chat-input" placeholder="Ask about disaster safety..." onkeydown="if(event.key==='Enter')sendChat()"/>
+        <button class="chat-send-btn" onclick="sendChat()">➤</button>
+      </div>
+    </div>
+
+    <!-- Feature 6: Campus Map -->
+    <div class="card fade-up">
+      <div class="card-label"><span class="dot"></span>Campus Emergency Map</div>
+      <div class="campus-map-wrap">
+        <svg class="campus-map-svg" viewBox="0 0 420 280" id="campus-map-svg">
+          <!-- Buildings -->
+          <rect x="10" y="10" width="110" height="70" rx="6" fill="#1a2236" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
+          <text x="65" y="50" text-anchor="middle" font-size="10" fill="rgba(255,255,255,0.5)" font-family="DM Sans,sans-serif">Block A</text>
+          <rect x="160" y="10" width="100" height="70" rx="6" fill="#1a2236" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
+          <text x="210" y="50" text-anchor="middle" font-size="10" fill="rgba(255,255,255,0.5)" font-family="DM Sans,sans-serif">Block B</text>
+          <rect x="310" y="10" width="100" height="70" rx="6" fill="#1a2236" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
+          <text x="360" y="50" text-anchor="middle" font-size="10" fill="rgba(255,255,255,0.5)" font-family="DM Sans,sans-serif">Block C</text>
+          <rect x="10" y="130" width="110" height="80" rx="6" fill="#1a2236" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
+          <text x="65" y="175" text-anchor="middle" font-size="10" fill="rgba(255,255,255,0.5)" font-family="DM Sans,sans-serif">Library</text>
+          <rect x="160" y="130" width="260" height="80" rx="6" fill="#1a2236" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
+          <text x="290" y="175" text-anchor="middle" font-size="10" fill="rgba(255,255,255,0.5)" font-family="DM Sans,sans-serif">Main Hall / Canteen</text>
+          <!-- Roads -->
+          <rect x="130" y="0" width="20" height="280" fill="rgba(255,255,255,0.03)"/>
+          <rect x="0" y="100" width="420" height="20" fill="rgba(255,255,255,0.03)"/>
+          <!-- Fire Exits (green arrows) -->
+          <g class="map-marker" data-tip="Fire Exit — North Block A" onclick="showMapTip(event,'Fire Exit — North Block A')">
+            <circle cx="65" cy="12" r="9" fill="#22c55e" opacity=".85"/><text x="65" y="16" text-anchor="middle" font-size="10">🚪</text>
+          </g>
+          <g class="map-marker" data-tip="Fire Exit — Block C East" onclick="showMapTip(event,'Fire Exit — Block C East')">
+            <circle cx="408" cy="45" r="9" fill="#22c55e" opacity=".85"/><text x="408" y="49" text-anchor="middle" font-size="10">🚪</text>
+          </g>
+          <g class="map-marker" data-tip="Emergency Exit — South" onclick="showMapTip(event,'Emergency Exit — South Campus')">
+            <circle cx="200" cy="270" r="9" fill="#22c55e" opacity=".85"/><text x="200" y="274" text-anchor="middle" font-size="10">🚪</text>
+          </g>
+          <!-- Assembly Points (yellow) -->
+          <g class="map-marker" data-tip="Assembly Point — Open Ground" onclick="showMapTip(event,'Assembly Point A — Open Ground')">
+            <circle cx="210" cy="115" r="11" fill="#eab308" opacity=".85"/><text x="210" y="120" text-anchor="middle" font-size="12">🅐</text>
+          </g>
+          <g class="map-marker" data-tip="Assembly Point B — Parking" onclick="showMapTip(event,'Assembly Point B — Parking Lot')">
+            <circle cx="370" cy="245" r="11" fill="#eab308" opacity=".85"/><text x="370" y="250" text-anchor="middle" font-size="12">🅑</text>
+          </g>
+          <!-- Medical Room (red cross) -->
+          <g class="map-marker" data-tip="Medical Room — Block A Ground Floor" onclick="showMapTip(event,'Medical Room — Block A Ground Floor')">
+            <circle cx="65" cy="165" r="10" fill="#ef4444" opacity=".9"/><text x="65" y="169" text-anchor="middle" font-size="12">⛑</text>
+          </g>
+          <!-- Fire Extinguishers -->
+          <g class="map-marker" data-tip="Fire Extinguisher" onclick="showMapTip(event,'Fire Extinguisher — Block A Corridor')">
+            <circle cx="140" cy="50" r="7" fill="#f97316" opacity=".85"/><text x="140" y="54" text-anchor="middle" font-size="9">🧯</text>
+          </g>
+          <g class="map-marker" data-tip="Fire Extinguisher" onclick="showMapTip(event,'Fire Extinguisher — Block B Corridor')">
+            <circle cx="270" cy="50" r="7" fill="#f97316" opacity=".85"/><text x="270" y="54" text-anchor="middle" font-size="9">🧯</text>
+          </g>
+          <g class="map-marker" data-tip="Fire Extinguisher" onclick="showMapTip(event,'Fire Extinguisher — Main Hall')">
+            <circle cx="290" cy="210" r="7" fill="#f97316" opacity=".85"/><text x="290" y="214" text-anchor="middle" font-size="9">🧯</text>
+          </g>
+          <!-- Emergency Exit Sign -->
+          <g class="map-marker" data-tip="Emergency Exit — West Wing" onclick="showMapTip(event,'Emergency Exit — West Wing Library')">
+            <circle cx="12" cy="210" r="9" fill="#22c55e" opacity=".85"/><text x="12" y="214" text-anchor="middle" font-size="10">🚪</text>
+          </g>
+        </svg>
+        <div class="map-tooltip" id="map-tooltip"></div>
+      </div>
+      <div class="map-legend">
+        <div class="map-legend-item"><div class="map-legend-dot" style="background:#22c55e"></div>Fire Exit</div>
+        <div class="map-legend-item"><div class="map-legend-dot" style="background:#eab308"></div>Assembly Point</div>
+        <div class="map-legend-item"><div class="map-legend-dot" style="background:#ef4444"></div>Medical Room</div>
+        <div class="map-legend-item"><div class="map-legend-dot" style="background:#f97316"></div>Fire Extinguisher</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ ALERT BROADCAST SYSTEM (Feature 7) ══ -->
+  <div class="card fade-up">
+    <div class="card-label"><span class="dot"></span>Emergency Alert Broadcast System</div>
+    <div class="broadcast-presets">
+      <button class="broadcast-preset" onclick="broadcastPreset('🔥 Fire detected in Block B. Evacuate immediately via emergency exits!')">🔥 Fire — Block B</button>
+      <button class="broadcast-preset" onclick="broadcastPreset('🌊 Flood warning! Move to upper floors. Avoid ground level areas.')">🌊 Flood Warning</button>
+      <button class="broadcast-preset" onclick="broadcastPreset('🌍 Earthquake detected! Drop, Cover, Hold. Do not use elevators.')">🌍 Earthquake</button>
+      <button class="broadcast-preset" onclick="broadcastPreset('🌀 Cyclone alert! Stay indoors. All outdoor activities suspended.')">🌀 Cyclone Alert</button>
+      <button class="broadcast-preset" onclick="broadcastPreset('✅ All clear. Emergency has been resolved. Resume normal activities.')">✅ All Clear</button>
+    </div>
+    <textarea class="broadcast-input" id="broadcast-input" rows="2" placeholder="Type custom emergency message to broadcast..."></textarea>
+    <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+      <button class="broadcast-btn" onclick="broadcastMessage()">📢 Broadcast Alert</button>
+      <button class="small-btn danger" onclick="clearBroadcastLog()">🗑 Clear Log</button>
+    </div>
+    <div class="broadcast-log" id="broadcast-log">
+      <div style="font-size:.8rem;color:var(--muted);padding:10px 0;">No alerts broadcast yet. Use presets or type a custom message.</div>
+    </div>
+  </div>
+
+  <!-- ══ DISASTER SIMULATION TRAINING (Feature 8) ══ -->
+  <div class="card fade-up">
+    <div class="card-label"><span class="dot"></span>Disaster Simulation Training</div>
+    <div class="quiz-score-banner" id="quiz-done">
+      <div class="quiz-score-big" id="quiz-final-score">0/0</div>
+      <div class="quiz-score-label" id="quiz-final-label">Complete!</div>
+      <button class="evac-btn primary" style="margin-top:16px;border-radius:99px;" onclick="restartQuiz()">🔁 Restart Training</button>
+    </div>
+    <div id="quiz-wrap">
+      <div class="quiz-card">
+        <div class="quiz-scenario" id="quiz-scenario">Scenario</div>
+        <div class="quiz-question" id="quiz-question">Loading...</div>
+        <div class="quiz-options" id="quiz-options"></div>
+        <div class="quiz-feedback" id="quiz-feedback"></div>
+        <div class="quiz-nav">
+          <div class="quiz-progress" id="quiz-progress">Question 1 of 8</div>
+          <button class="evac-btn primary" id="quiz-next-btn" onclick="nextQuestion()" style="display:none;padding:9px 20px;border-radius:99px;">Next →</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ EMERGENCY KIT CHECKLIST (Feature 10) ══ -->
+  <div class="card fade-up">
+    <div class="card-label"><span class="dot"></span>Emergency Kit Checklist</div>
+    <div class="kit-grid" id="kit-grid"></div>
+    <div class="kit-score">
+      <div class="kit-score-num" id="kit-score-num">0/12</div>
+      <div class="kit-score-label" id="kit-score-label">Check off items you have in your emergency kit</div>
+    </div>
+  </div>
+
+  <!-- ══ GEOLOCATION (Feature 11) ══ -->
+  <div class="card fade-up">
+    <div class="card-label"><span class="dot"></span>Location-Based Emergency Services</div>
+    <div class="geo-status" id="geo-status">📍 Location not detected. Click below to find nearby services.</div>
+    <button class="geo-btn" onclick="detectLocation()">📍 Detect My Location</button>
+    <div class="geo-services" id="geo-services"></div>
+  </div>
+
+  <!-- ══ SEVERITY METER (Feature 12) ══ -->
+  <div class="card fade-up">
+    <div class="card-label"><span class="dot"></span>Disaster Severity Meter</div>
+    <div class="severity-slider-wrap">
+      <input type="range" class="severity-slider" id="severity-slider" min="1" max="10" value="3" oninput="updateSeverity(this.value)"/>
+      <div class="severity-labels"><span>Low</span><span>Moderate</span><span>High</span><span>Extreme</span></div>
+    </div>
+    <div class="severity-level low" id="severity-level">
+      <span class="severity-badge low" id="severity-badge">LOW — Level 3</span>
+      <p id="severity-text">Standard precautions advised. Monitor official channels. Ensure you know evacuation routes. Keep emergency kit accessible.</p>
+    </div>
+  </div>
+
+  <!-- ══ OFFLINE SUPPORT CONCEPT (Feature 13) ══ -->
+  <div class="card fade-up">
+    <div class="card-label"><span class="dot"></span>Offline Support — Service Worker Architecture</div>
+    <p style="font-size:.85rem;color:var(--muted);margin-bottom:18px;line-height:1.6;">SafeCampus can work without internet using Service Workers, enabling emergency access even during network outages.</p>
+    <div class="offline-steps">
+      <div class="offline-step">
+        <div class="offline-step-icon">⚙️</div>
+        <div class="offline-step-text"><h4>1. Register Service Worker</h4><p>On first load, register a service worker that intercepts all network requests and caches critical assets.</p></div>
+      </div>
+      <div class="offline-step">
+        <div class="offline-step-icon">💾</div>
+        <div class="offline-step-text"><h4>2. Cache Emergency Assets</h4><p>Cache the full HTML, CSS, JavaScript, disaster data JSON, and campus map SVG during installation phase.</p></div>
+      </div>
+      <div class="offline-step">
+        <div class="offline-step-icon">🔌</div>
+        <div class="offline-step-text"><h4>3. Serve from Cache When Offline</h4><p>When network fails, service worker serves cached resources instantly — all emergency features remain functional.</p></div>
+      </div>
+      <div class="offline-step">
+        <div class="offline-step-icon">🔄</div>
+        <div class="offline-step-text"><h4>4. Background Sync on Reconnect</h4><p>When connectivity restores, sync preparedness scores and alert logs with the central server automatically.</p></div>
+      </div>
+    </div>
+    <div class="offline-code">
+// sw.js — Service Worker Registration
+const CACHE_NAME = 'safecampus-v1';
+const ASSETS = ['/', '/index.html', '/style.css', '/app.js', '/data/disasters.json'];
+
+self.addEventListener('install', e => {
+  e.waitUntil(caches.open(CACHE_NAME).then(c => c.addAll(ASSETS)));
+});
+
+self.addEventListener('fetch', e => {
+  e.respondWith(
+    caches.match(e.request).then(res => res || fetch(e.request))
+  );
+});</div>
+  </div>
+
+  <!-- ══ PREPAREDNESS CERTIFICATE (Feature 14) ══ -->
+  <div class="card fade-up">
+    <div class="card-label"><span class="dot"></span>SafeCampus Preparedness Certificate</div>
+    <div style="margin-bottom:16px;">
+      <input class="cert-name-input" id="cert-name" placeholder="Enter your full name for the certificate..." oninput="updateCertPreview()"/>
+      <div style="font-size:.78rem;color:var(--muted);margin-bottom:8px;">Complete at least 80% preparedness score to unlock certificate.</div>
+    </div>
+    <div class="cert-preview" id="cert-preview">
+      <div class="cert-logo">🛡️</div>
+      <div class="cert-title">CERTIFICATE OF PREPAREDNESS</div>
+      <div class="cert-subtitle">SafeCampus Disaster Preparedness Program</div>
+      <div class="cert-recipient">This certifies that</div>
+      <div class="cert-name" id="cert-display-name">Your Name</div>
+      <div class="cert-score" id="cert-display-score">Score: 0%</div>
+      <div class="cert-desc">Has successfully completed the SafeCampus Disaster Preparedness Training and demonstrated knowledge of emergency response protocols, evacuation procedures, and safety guidelines.</div>
+      <div class="cert-date" id="cert-date">Issued: —</div>
+      <div class="cert-border-dots">⬡ ⬡ ⬡ ⬡ ⬡ ⬡ ⬡ ⬡ ⬡ ⬡ ⬡ ⬡ ⬡</div>
+    </div>
+    <button class="cert-btn" id="cert-download-btn" onclick="downloadCertificate()" disabled>🏆 Download Certificate</button>
+    <p id="cert-status" style="font-size:.78rem;color:var(--danger);margin-top:8px;">Complete 80%+ preparedness checklist and enter your name to unlock.</p>
+  </div>
+
+  <!-- ══ WHATSAPP EMERGENCY ══ -->
+  <!-- ══ WHATSAPP WITH QR CODE ══ -->
+  <div class="whatsapp-card fade-up" style="flex-wrap:wrap;gap:20px;">
+    <div class="whatsapp-icon-wrap" style="align-self:flex-start;">
+      <svg width="30" height="30" viewBox="0 0 32 32" fill="none"><path d="M16 2C8.268 2 2 8.268 2 16c0 2.478.675 4.8 1.848 6.793L2 30l7.395-1.82A13.93 13.93 0 0016 30c7.732 0 14-6.268 14-14S23.732 2 16 2z" fill="#fff"/><path d="M16 4.4A11.6 11.6 0 014.4 16c0 2.122.572 4.11 1.572 5.82l.243.42-1.03 3.764 3.872-1.015.41.237A11.556 11.556 0 0016 27.6 11.6 11.6 0 0027.6 16 11.6 11.6 0 0016 4.4z" fill="#25d366"/><path d="M12.11 10.3c-.28-.624-.574-.636-.84-.647-.218-.009-.467-.008-.716-.008-.25 0-.655.094-.998.468-.343.375-1.31 1.28-1.31 3.12s1.342 3.621 1.53 3.87c.187.25 2.606 4.15 6.41 5.653 3.17 1.249 3.805 1.001 4.49.939.686-.062 2.212-.906 2.524-1.78.312-.874.312-1.622.218-1.78-.093-.156-.343-.25-.717-.437-.374-.187-2.212-1.093-2.555-1.218-.343-.125-.593-.187-.843.187-.25.375-.967 1.218-1.185 1.468-.218.25-.436.281-.81.094-.374-.188-1.58-.583-3.01-1.858-1.113-.993-1.863-2.218-2.082-2.593-.218-.374-.023-.578.164-.765.168-.168.374-.437.562-.656.187-.218.25-.375.374-.624.125-.25.063-.468-.031-.656-.094-.187-.822-2.04-1.155-2.78z" fill="#fff"/></svg>
+    </div>
+
+    <!-- Info + Button -->
+    <div class="whatsapp-info" style="min-width:180px;">
+      <h3>🚨 Emergency WhatsApp Alert</h3>
+      <p>Send an instant SOS message to campus emergency coordinator</p>
+      <div class="wa-number" style="font-size:.95rem;margin:6px 0 14px;">+91 91088 09416</div>
+      <a id="wa-send-btn" class="whatsapp-btn" href="#" onclick="sendWhatsAppAlert(event)" target="_blank" rel="noopener" style="display:inline-flex;">📱 Send SOS via WhatsApp</a>
+    </div>
+
+    <!-- QR Code Section -->
+    <div style="display:flex;flex-direction:column;align-items:center;gap:10px;margin-left:auto;">
+      <div style="background:#fff;border-radius:14px;padding:10px;box-shadow:0 0 24px rgba(37,211,102,0.25);position:relative;">
+        <!-- Demo QR Code drawn as SVG pixel art -->
+        <svg width="110" height="110" viewBox="0 0 110 110" xmlns="http://www.w3.org/2000/svg" style="display:block;">
+          <rect width="110" height="110" fill="#fff"/>
+          <!-- Top-left finder pattern -->
+          <rect x="8" y="8" width="28" height="28" rx="3" fill="#111"/>
+          <rect x="12" y="12" width="20" height="20" rx="2" fill="#fff"/>
+          <rect x="16" y="16" width="12" height="12" rx="1" fill="#111"/>
+          <!-- Top-right finder pattern -->
+          <rect x="74" y="8" width="28" height="28" rx="3" fill="#111"/>
+          <rect x="78" y="12" width="20" height="20" rx="2" fill="#fff"/>
+          <rect x="82" y="16" width="12" height="12" rx="1" fill="#111"/>
+          <!-- Bottom-left finder pattern -->
+          <rect x="8" y="74" width="28" height="28" rx="3" fill="#111"/>
+          <rect x="12" y="78" width="20" height="20" rx="2" fill="#fff"/>
+          <rect x="16" y="82" width="12" height="12" rx="1" fill="#111"/>
+          <!-- Timing patterns -->
+          <rect x="40" y="8"  width="4" height="4" fill="#111"/>
+          <rect x="48" y="8"  width="4" height="4" fill="#111"/>
+          <rect x="56" y="8"  width="4" height="4" fill="#111"/>
+          <rect x="64" y="8"  width="4" height="4" fill="#111"/>
+          <rect x="8"  y="40" width="4" height="4" fill="#111"/>
+          <rect x="8"  y="48" width="4" height="4" fill="#111"/>
+          <rect x="8"  y="56" width="4" height="4" fill="#111"/>
+          <rect x="8"  y="64" width="4" height="4" fill="#111"/>
+          <!-- Data modules (random-looking pattern) -->
+          <rect x="40" y="16" width="4" height="4" fill="#111"/>
+          <rect x="48" y="16" width="4" height="4" fill="#111"/>
+          <rect x="56" y="20" width="4" height="4" fill="#111"/>
+          <rect x="64" y="16" width="4" height="4" fill="#111"/>
+          <rect x="40" y="24" width="4" height="4" fill="#111"/>
+          <rect x="64" y="24" width="4" height="4" fill="#111"/>
+          <rect x="48" y="28" width="4" height="4" fill="#111"/>
+          <rect x="56" y="28" width="4" height="4" fill="#111"/>
+          <rect x="40" y="36" width="4" height="4" fill="#111"/>
+          <rect x="56" y="36" width="4" height="4" fill="#111"/>
+          <rect x="64" y="32" width="4" height="4" fill="#111"/>
+          <rect x="40" y="44" width="4" height="4" fill="#111"/>
+          <rect x="48" y="40" width="4" height="4" fill="#111"/>
+          <rect x="64" y="44" width="4" height="4" fill="#111"/>
+          <rect x="56" y="48" width="4" height="4" fill="#111"/>
+          <rect x="40" y="52" width="4" height="4" fill="#111"/>
+          <rect x="48" y="56" width="4" height="4" fill="#111"/>
+          <rect x="64" y="52" width="4" height="4" fill="#111"/>
+          <rect x="40" y="60" width="4" height="4" fill="#111"/>
+          <rect x="56" y="60" width="4" height="4" fill="#111"/>
+          <rect x="64" y="64" width="4" height="4" fill="#111"/>
+          <rect x="40" y="68" width="4" height="4" fill="#111"/>
+          <rect x="48" y="64" width="4" height="4" fill="#111"/>
+          <rect x="56" y="72" width="4" height="4" fill="#111"/>
+          <rect x="40" y="76" width="4" height="4" fill="#111"/>
+          <rect x="48" y="80" width="4" height="4" fill="#111"/>
+          <rect x="56" y="80" width="4" height="4" fill="#111"/>
+          <rect x="64" y="76" width="4" height="4" fill="#111"/>
+          <rect x="40" y="84" width="4" height="4" fill="#111"/>
+          <rect x="56" y="88" width="4" height="4" fill="#111"/>
+          <rect x="64" y="84" width="4" height="4" fill="#111"/>
+          <rect x="40" y="92" width="4" height="4" fill="#111"/>
+          <rect x="48" y="92" width="4" height="4" fill="#111"/>
+          <rect x="64" y="92" width="4" height="4" fill="#111"/>
+          <rect x="74" y="40" width="4" height="4" fill="#111"/>
+          <rect x="82" y="40" width="4" height="4" fill="#111"/>
+          <rect x="90" y="36" width="4" height="4" fill="#111"/>
+          <rect x="98" y="40" width="4" height="4" fill="#111"/>
+          <rect x="74" y="48" width="4" height="4" fill="#111"/>
+          <rect x="90" y="48" width="4" height="4" fill="#111"/>
+          <rect x="82" y="52" width="4" height="4" fill="#111"/>
+          <rect x="98" y="52" width="4" height="4" fill="#111"/>
+          <rect x="74" y="56" width="4" height="4" fill="#111"/>
+          <rect x="90" y="56" width="4" height="4" fill="#111"/>
+          <rect x="82" y="60" width="4" height="4" fill="#111"/>
+          <rect x="74" y="64" width="4" height="4" fill="#111"/>
+          <rect x="98" y="60" width="4" height="4" fill="#111"/>
+          <rect x="82" y="68" width="4" height="4" fill="#111"/>
+          <rect x="90" y="68" width="4" height="4" fill="#111"/>
+          <rect x="74" y="76" width="4" height="4" fill="#111"/>
+          <rect x="82" y="76" width="4" height="4" fill="#111"/>
+          <rect x="98" y="76" width="4" height="4" fill="#111"/>
+          <rect x="74" y="84" width="4" height="4" fill="#111"/>
+          <rect x="90" y="84" width="4" height="4" fill="#111"/>
+          <rect x="82" y="88" width="4" height="4" fill="#111"/>
+          <rect x="74" y="92" width="4" height="4" fill="#111"/>
+          <rect x="98" y="88" width="4" height="4" fill="#111"/>
+          <rect x="90" y="92" width="4" height="4" fill="#111"/>
+          <!-- WhatsApp logo centre -->
+          <circle cx="55" cy="55" r="10" fill="#25d366"/>
+          <text x="55" y="60" text-anchor="middle" font-size="12" fill="#fff">📱</text>
+        </svg>
+        <!-- Scan pulse ring animation -->
+        <div id="qr-scan-line" style="position:absolute;top:10px;left:10px;right:10px;height:2px;background:linear-gradient(90deg,transparent,#25d366,transparent);border-radius:2px;animation:qrScan 2s ease-in-out infinite;"></div>
+      </div>
+      <div style="text-align:center;max-width:130px;">
+        <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:.78rem;color:#25d366;margin-bottom:3px;">📲 Scan & Share</div>
+        <div style="font-size:.68rem;color:var(--muted);line-height:1.5;">Scan this QR code to open WhatsApp &amp; spread SafeCampus to your friends!</div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- QR Scan line CSS -->
+  <style>
+    @keyframes qrScan {
+      0%   { top: 10px;  opacity: 1; }
+      50%  { top: 108px; opacity: 1; }
+      51%  { opacity: 0; }
+      52%  { top: 10px;  opacity: 0; }
+      53%  { opacity: 1; }
+      100% { top: 10px;  opacity: 1; }
+    }
+  </style>
+
+  <!-- ══ JSON OUTPUT ══ -->
+  <div class="card fade-up">
+    <div class="card-label"><span class="dot"></span>Live JSON Preparedness Data Output</div>
+    <div class="json-wrap"><pre id="json-output"><span style="color:var(--muted)">// Select a disaster to generate JSON output...</span></pre></div>
+    <button class="json-copy-btn" onclick="copyJSON()">📋 Copy JSON</button>
+  </div>
+
+</main>
+
+<footer>
+  SafeCampus &copy; 2026 — Civic Tech &amp; Disaster Management Hackathon Project<br/>
+  <span id="syntax-squad-text" style="display:inline-block;font-weight:800;font-size:1.5rem;letter-spacing:.08em;font-family:'Syne',sans-serif;">Developed by Syntax Squad</span>
+</footer>
+
+<script>
+/* ══════════════════════════════════════════════
+   ⚙️ CONFIG
+══════════════════════════════════════════════ */
+const CONFIG = {
+  EMAILJS_PUBLIC_KEY: 'YOUR_EMAILJS_PUBLIC_KEY',
+  EMAILJS_SERVICE_ID: 'YOUR_SERVICE_ID',
+  EMAILJS_TEMPLATE_ID: 'YOUR_TEMPLATE_ID',
+  GOOGLE_CLIENT_ID: 'YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com'
+};
+try { emailjs.init(CONFIG.EMAILJS_PUBLIC_KEY); } catch(e){}
+
+/* ══════════════════════════════════════════════
+   DATA — Disasters, Checklists, Contacts
+══════════════════════════════════════════════ */
+const DISASTERS = {
+  EARTHQUAKE: { icon:'🌍', color:'#f97316', glow:'rgba(249,115,22,0.2)', subtitle:'Seismic event detected. Act immediately.', actions:['DROP, COVER, and HOLD ON under a sturdy desk or table','Stay away from windows, exterior walls and heavy objects','If outdoors, move to open space away from buildings','After shaking stops, check for injuries and hazards','Use stairs only — never elevators during or after tremors'], evacuationQueue:['Assembly Point A','Main Corridor','Ground Floor Exit','Parking Lot','Open Field'] },
+  FIRE:       { icon:'🔥', color:'#ef4444', glow:'rgba(239,68,68,0.2)',   subtitle:'Fire emergency active. Evacuate immediately.', actions:['Trigger the nearest fire alarm immediately','Evacuate via designated emergency stairs — no elevators','Crawl low under smoke, cover mouth with cloth','Feel doors before opening — if hot, use alternate route','Assemble at the designated fire muster point'], evacuationQueue:['Nearest Stairwell','Ground Floor Lobby','Fire Exit Door','Muster Zone','Safe Distance'] },
+  FLOOD:      { icon:'🌊', color:'#3b82f6', glow:'rgba(59,130,246,0.2)', subtitle:'Flood warning active. Move to higher ground.', actions:['Move to the highest floor or elevated ground immediately','Turn off all electricity at the main switch','Avoid walking or driving through moving flood water','Do not touch electrical equipment if wet or standing in water','Listen to official radio or alerts for further instructions'], evacuationQueue:['Ground Floor','Staircase to 3rd Floor','Rooftop Access','Helicopter Pad','Rescue Point'] },
+  CYCLONE:    { icon:'🌀', color:'#8b5cf6', glow:'rgba(139,92,246,0.2)', subtitle:'Cyclone warning issued. Seek shelter now.', actions:['Stay indoors away from windows and glass doors','Secure or bring in all loose outdoor objects','Move to an interior room on the lowest stable floor','Monitor official weather alerts and emergency broadcasts','Keep emergency kit accessible — power outages are likely'], evacuationQueue:['Interior Room','Reinforced Corridor','Basement Shelter','Community Hall','Relief Camp'] }
+};
+
+const CHECKLIST_ITEMS = [
+  { id:'routes',   label:'🗺️ Know all evacuation routes' },
+  { id:'kit',      label:'🎒 Emergency kit assembled & stocked' },
+  { id:'contacts', label:'📞 Emergency contacts saved on phone' },
+  { id:'firstaid', label:'🩹 First aid knowledge & training' },
+  { id:'torch',    label:'🔦 Flashlight & spare batteries available' },
+  { id:'water',    label:'💧 Water supply for 72 hours' },
+  { id:'docs',     label:'📄 Important documents in waterproof bag' },
+  { id:'drills',   label:'🏃 Participated in campus evacuation drill' },
+];
+
+const EMERGENCY_CONTACTS = [
+  { name:'Police',        number:'100',  icon:'👮', bg:'#1e3a5f' },
+  { name:'Fire Dept.',    number:'101',  icon:'🚒', bg:'#5f1e1e' },
+  { name:'Ambulance',     number:'108',  icon:'🚑', bg:'#1e5f2a' },
+  { name:'Disaster Mgmt', number:'1078', icon:'🏛️', bg:'#3b2a5f' }
+];
+
+const EMERGENCY_KIT = [
+  { id:'flashlight',   icon:'🔦', name:'Flashlight' },
+  { id:'firstaid',     icon:'🩹', name:'First Aid Kit' },
+  { id:'water',        icon:'💧', name:'Water (3L+)' },
+  { id:'powerbank',    icon:'🔋', name:'Power Bank' },
+  { id:'food',         icon:'🥫', name:'Non-perishable Food' },
+  { id:'whistle',      icon:'📣', name:'Emergency Whistle' },
+  { id:'blanket',      icon:'🧣', name:'Emergency Blanket' },
+  { id:'radio',        icon:'📻', name:'Battery Radio' },
+  { id:'medicines',    icon:'💊', name:'Essential Medicines' },
+  { id:'docs',         icon:'📄', name:'ID Documents' },
+  { id:'cash',         icon:'💵', name:'Emergency Cash' },
+  { id:'mask',         icon:'😷', name:'N95 Masks' },
+];
+
+/* ══════════════════════════════════════════════
+   AI ASSISTANT — Rule-Based Responses
+══════════════════════════════════════════════ */
+const AI_KNOWLEDGE = [
+  { patterns:['earthquake','seismic','tremor','shaking'], response:'During an earthquake: <b>DROP, COVER, HOLD ON.</b> Get under a sturdy table, stay away from windows and exterior walls. If outdoors, move away from buildings and power lines. After shaking stops, check for injuries and hazards before moving.' },
+  { patterns:['fire','smoke','burning','flame'], response:'During a fire: <b>Activate the alarm immediately.</b> Evacuate using stairs (never elevators). Crawl low if there\'s smoke. Feel doors before opening. If blocked, signal from a window. Meet at the assembly point.' },
+  { patterns:['flood','flooding','water','inundation'], response:'During a flood: <b>Move to higher ground immediately.</b> Turn off electricity at the main breaker. Avoid floodwater — even 6 inches can knock you down. Do not drive through flooded roads. Follow official evacuation orders.' },
+  { patterns:['cyclone','hurricane','typhoon','storm'], response:'During a cyclone: <b>Stay indoors away from windows.</b> Move to an interior room. Secure loose objects outside. Monitor official alerts. Keep your emergency kit ready. Expect power outages — have backup light and radio.' },
+  { patterns:['evacuate','evacuation','escape','exit','route'], response:'For evacuation: Know your building\'s <b>designated emergency exits</b> in advance. Use BFS pathfinding on our Campus Map above to find the shortest route. Never use elevators. Proceed calmly to the assembly point and await further instructions.' },
+  { patterns:['kit','bag','supplies','pack','prepare'], response:'Your emergency kit should include: flashlight, first aid kit, 3+ liters of water per person, non-perishable food, power bank, battery radio, N95 masks, emergency cash, important documents, and any essential medications.' },
+  { patterns:['first aid','injury','hurt','wound','bleed'], response:'For first aid: Apply pressure to bleeding wounds. Keep injured people calm and warm. Do not move someone with a possible spinal injury. Call emergency services (108 for ambulance) immediately for serious injuries.' },
+  { patterns:['contact','call','number','emergency service'], response:'Key emergency numbers: <b>Police: 100 | Fire: 101 | Ambulance: 108 | Disaster Management: 1078</b>. Save these in your phone. In a campus emergency, also contact campus security through the intercom system.' },
+  { patterns:['certificate','training','score','pass'], response:'Complete the <b>preparedness checklist</b> to score 80% or above, then enter your name at the Certificate section to download your SafeCampus Preparedness Certificate!' },
+  { patterns:['offline','internet','network','no wifi'], response:'SafeCampus can work <b>offline</b> using Service Workers. The app caches all emergency data locally so you can access evacuation routes, contacts, and safety instructions even without internet connectivity.' },
+  { patterns:['assembly','muster','gather','meeting point'], response:'Campus assembly points are marked in <b>yellow</b> on the Campus Map. Assembly Point A is at the Open Ground (central campus), Assembly Point B is at the Parking Lot (rear). Always go to the nearest assembly point and wait for roll call.' },
+  { patterns:['hello','hi','hey','help','assist'], response:'Hello! I\'m the SafeCampus AI Safety Assistant. I can answer questions about earthquake safety, fire evacuation, flood response, cyclone preparedness, emergency kits, first aid, and more. What would you like to know?' },
+];
+
+const CHAT_SUGGESTIONS = [
+  'What to do in an earthquake?',
+  'How to respond to a fire?',
+  'What should be in an emergency kit?',
+  'Where are the assembly points?',
+  'How do I evacuate during a flood?',
+];
+
+/* ══════════════════════════════════════════════
+   QUIZ DATA — Training Simulation
+══════════════════════════════════════════════ */
+const QUIZ_QUESTIONS = [
+  { scenario:'🌍 Earthquake', q:'During an earthquake indoors, what is the correct action?', options:['Run outside immediately','Drop, Cover, and Hold On under a sturdy desk','Stand in a doorway','Use the elevator to evacuate'], correct:1, explain:'DROP, COVER, HOLD ON is globally recognized as the safest action. Running outside risks injury from falling debris.' },
+  { scenario:'🔥 Fire Emergency', q:'You discover smoke in the hallway. What should you do first?', options:['Open windows to ventilate','Activate the nearest fire alarm','Call the fire department directly','Gather your belongings'], correct:1, explain:'Activating the alarm alerts everyone in the building immediately. This is always the priority before calling external services.' },
+  { scenario:'🌊 Flood Warning', q:'Floodwater is rising. Which action is most dangerous?', options:['Moving to upper floors','Turning off electricity','Walking through knee-deep moving water','Monitoring official alerts'], correct:2, explain:'Even 6 inches of moving water can knock an adult down. 12 inches can carry away a vehicle. Never walk through floodwater.' },
+  { scenario:'🌀 Cyclone', q:'A cyclone is approaching. Where is the safest place to shelter?', options:['Near large windows to monitor the storm','On the top floor to avoid flooding','In an interior room away from windows','Under a large tree for cover'], correct:2, explain:'Interior rooms on middle floors provide best protection from both high winds (top floors) and flooding (ground floors).' },
+  { scenario:'🔥 Fire Evacuation', q:'You need to open a door during a fire evacuation. What must you do first?', options:['Push the door open quickly','Feel the door for heat with the back of your hand','Look under the door for smoke','Knock to warn people inside'], correct:1, explain:'A hot door means fire is on the other side. Use the BACK of your hand (not palm) to check — if hot, use an alternate route.' },
+  { scenario:'🌍 Post-Earthquake', q:'After an earthquake, you suspect structural damage. What should you do?', options:['Return to your office to check your belongings','Continue your work until told otherwise','Evacuate and do not re-enter until inspected','Assess the damage yourself'], correct:2, explain:'Buildings may be structurally unsafe after an earthquake even without visible damage. Always await official clearance before re-entering.' },
+  { scenario:'📞 Emergency', q:'Which number should you call for medical emergencies in India?', options:['100','101','108','112'], correct:2, explain:'108 is the dedicated ambulance and medical emergency number in India. 100 is Police, 101 is Fire, 112 is the all-in-one emergency number.' },
+  { scenario:'🎒 Preparedness', q:'How much water should an emergency kit include per person per day?', options:['Half a liter','1 liter','3 liters (about 1 gallon)','5 liters'], correct:2, explain:'Emergency management guidelines recommend 1 gallon (approx. 3–4 liters) per person per day for drinking and sanitation purposes.' },
+];
+
+/* ══════════════════════════════════════════════
+   STATE
+══════════════════════════════════════════════ */
+let state = {
+  disasterType: null,
+  checkedItems: new Set(),
+  kitItems: new Set(),
+  queueRunning: false,
+  user: null,
+  currentOTP: null,
+  otpEmail: null,
+  otpExpiry: null,
+  quizIndex: 0,
+  quizScore: 0,
+  quizAnswered: false,
+  isSpeaking: false,
+  broadcastLog: [],
+  severityLevel: 3,
+  selectedEvacCell: null,
+};
+
+/* ══════════════════════════════════════════════
+   LIVE CLOCK
+══════════════════════════════════════════════ */
+const DAYS=['SUN','MON','TUE','WED','THU','FRI','SAT'];
+const MONTHS=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+function updateClock(){
+  const n=new Date();
+  document.getElementById('live-day').textContent=DAYS[n.getDay()];
+  document.getElementById('live-date').textContent=`${n.getDate()} ${MONTHS[n.getMonth()]} ${n.getFullYear()}`;
+  const h=String(n.getHours()).padStart(2,'0'),m=String(n.getMinutes()).padStart(2,'0'),s=String(n.getSeconds()).padStart(2,'0');
+  document.getElementById('live-time').textContent=`${h}:${m}:${s}`;
+}
+updateClock(); setInterval(updateClock, 1000);
+
+/* ══════════════════════════════════════════════
+   THEME
+══════════════════════════════════════════════ */
+function toggleTheme(){
+  const root=document.documentElement, isLight=root.classList.toggle('light');
+  document.getElementById('theme-toggle-thumb').textContent=isLight?'🌙':'☀️';
+  document.getElementById('theme-toggle-bg').textContent=isLight?'☀️':'🌙';
+  localStorage.setItem('sc-theme',isLight?'light':'dark');
+}
+(function(){
+  if(localStorage.getItem('sc-theme')==='light'){
+    document.documentElement.classList.add('light');
+    const t=document.getElementById('theme-toggle-thumb'),b=document.getElementById('theme-toggle-bg');
+    if(t)t.textContent='🌙'; if(b)b.textContent='☀️';
+  }
+})();
+
+/* ══════════════════════════════════════════════
+   MODAL / AUTH
+══════════════════════════════════════════════ */
+function openModal(){document.getElementById('auth-modal').classList.add('open')}
+function closeModal(){document.getElementById('auth-modal').classList.remove('open')}
+document.getElementById('auth-modal').addEventListener('click',function(e){if(e.target===this)closeModal()});
+function switchTab(tab){
+  document.querySelectorAll('.auth-tab').forEach((t,i)=>t.classList.toggle('active',(i===0&&tab==='signup')||(i===1&&tab==='login')));
+  document.getElementById('panel-signup').classList.toggle('active',tab==='signup');
+  document.getElementById('panel-login').classList.toggle('active',tab==='login');
+}
+function generateOTP(){return String(Math.floor(100000+Math.random()*900000))}
+function isValidEmail(e){return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e)}
+function showMsg(id,text,type){const el=document.getElementById(id);el.textContent=text;el.className=`auth-msg ${type}`}
+function getOTPValue(gid){return[...document.querySelectorAll(`#${gid} .otp-box`)].map(i=>i.value).join('')}
+function focusFirstOTP(gid){document.querySelector(`#${gid} .otp-box`)?.focus()}
+
+window.addEventListener('load',()=>{
+  ['otp-group','login-otp-group'].forEach(gid=>{
+    const boxes=[...document.querySelectorAll(`#${gid} .otp-box`)];
+    boxes.forEach((box,i)=>{
+      box.addEventListener('input',()=>{box.value=box.value.replace(/\D/g,'').slice(-1);if(box.value&&i<boxes.length-1)boxes[i+1].focus()});
+      box.addEventListener('keydown',e=>{if(e.key==='Backspace'&&!box.value&&i>0)boxes[i-1].focus()});
+      box.addEventListener('paste',e=>{e.preventDefault();const t=(e.clipboardData||window.clipboardData).getData('text').replace(/\D/g,'');boxes.forEach((b,j)=>{if(t[j])b.value=t[j]});boxes[Math.min(t.length,boxes.length-1)].focus()});
+    });
+  });
+  initAll();
+});
+
+async function sendOTPEmail(name,email,otp){
+  const isDemo=CONFIG.EMAILJS_PUBLIC_KEY==='YOUR_EMAILJS_PUBLIC_KEY';
+  if(isDemo){console.log(`%c[SafeCampus OTP] ${email} → ${otp}`,'background:#1a2236;color:#22c55e;padding:4px 8px;border-radius:4px;font-weight:bold');await new Promise(r=>setTimeout(r,1200));return{ok:true,demo:true}}
+  try{await emailjs.send(CONFIG.EMAILJS_SERVICE_ID,CONFIG.EMAILJS_TEMPLATE_ID,{to_name:name||'User',to_email:email,otp_code:otp,app_name:'SafeCampus'});return{ok:true}}
+  catch(err){return{ok:false,error:err}}
+}
+async function sendOTP(){
+  const name=document.getElementById('signup-name').value.trim(),email=document.getElementById('signup-email').value.trim();
+  if(!name)return showMsg('signup-msg','⚠️ Please enter your name.','error');
+  if(!isValidEmail(email))return showMsg('signup-msg','⚠️ Enter a valid email address.','error');
+  const btn=document.getElementById('send-otp-btn');btn.disabled=true;btn.innerHTML='<span class="spinner"></span>Sending OTP...';
+  const otp=generateOTP();state.currentOTP=otp;state.otpEmail=email;state.otpExpiry=Date.now()+300000;
+  const r=await sendOTPEmail(name,email,otp);btn.disabled=false;btn.innerHTML='Send OTP →';
+  if(r.ok){document.getElementById('otp-email-display').textContent=email;document.getElementById('signup-step1').classList.remove('active');document.getElementById('signup-step2').classList.add('active');if(r.demo)showMsg('otp-msg',`🔧 Demo mode — OTP is ${otp} (check console)`, 'info');startResendTimer();focusFirstOTP('otp-group')}
+  else showMsg('signup-msg','❌ Failed to send OTP. Check EmailJS config.','error')
+}
+function verifyOTP(){
+  const entered=getOTPValue('otp-group');
+  if(entered.length<6)return showMsg('otp-msg','⚠️ Enter all 6 digits.','error');
+  if(Date.now()>state.otpExpiry)return showMsg('otp-msg','⏰ OTP expired. Please resend.','error');
+  if(entered!==state.currentOTP)return showMsg('otp-msg','❌ Incorrect OTP. Try again.','error');
+  loginUser({name:document.getElementById('signup-name').value.trim(),email:state.otpEmail,avatar:null});
+}
+async function sendLoginOTP(){
+  const email=document.getElementById('login-email').value.trim();
+  if(!isValidEmail(email))return showMsg('login-msg','⚠️ Enter a valid email address.','error');
+  const btn=document.getElementById('send-login-otp-btn');btn.disabled=true;btn.innerHTML='<span class="spinner"></span>Sending OTP...';
+  const otp=generateOTP();state.currentOTP=otp;state.otpEmail=email;state.otpExpiry=Date.now()+300000;
+  const r=await sendOTPEmail('User',email,otp);btn.disabled=false;btn.innerHTML='Send Login OTP →';
+  if(r.ok){document.getElementById('login-email-display').textContent=email;document.getElementById('login-step1').classList.remove('active');document.getElementById('login-step2').classList.add('active');if(r.demo)showMsg('login-otp-msg',`🔧 Demo mode — OTP is ${otp} (check console)`,'info');focusFirstOTP('login-otp-group')}
+  else showMsg('login-msg','❌ Failed to send OTP.','error')
+}
+function verifyLoginOTP(){
+  const entered=getOTPValue('login-otp-group');
+  if(entered.length<6)return showMsg('login-otp-msg','⚠️ Enter all 6 digits.','error');
+  if(Date.now()>state.otpExpiry)return showMsg('login-otp-msg','⏰ OTP expired. Please resend.','error');
+  if(entered!==state.currentOTP)return showMsg('login-otp-msg','❌ Incorrect OTP. Try again.','error');
+  loginUser({name:state.otpEmail.split('@')[0],email:state.otpEmail,avatar:null});
+}
+let resendInterval;
+async function resendOTP(){
+  const otp=generateOTP();state.currentOTP=otp;state.otpExpiry=Date.now()+300000;
+  const r=await sendOTPEmail(document.getElementById('signup-name').value.trim(),state.otpEmail,otp);
+  if(r.ok&&r.demo)showMsg('otp-msg',`🔧 Demo mode — New OTP is ${otp}`,'info');
+  else if(r.ok)showMsg('otp-msg','✅ OTP resent successfully.','success');
+  else showMsg('otp-msg','❌ Resend failed.','error');
+  startResendTimer();
+}
+function startResendTimer(){
+  let t=30;const link=document.getElementById('resend-link'),timer=document.getElementById('resend-timer');
+  link.style.display='none';timer.style.display='inline';
+  clearInterval(resendInterval);
+  resendInterval=setInterval(()=>{timer.textContent=` (${t}s)`;if(--t<0){clearInterval(resendInterval);link.style.display='inline';timer.style.display='none'}},1000);
+}
+function loginUser(u){state.user=u;closeModal();const av=document.getElementById('header-avatar');av.textContent=u.name?u.name[0].toUpperCase():'?';av.style.background=u.avatar?'transparent':DISASTERS[state.disasterType||'EARTHQUAKE']?.color||'#f97316';if(u.avatar){av.innerHTML=`<img src="${u.avatar}" alt="${u.name}"/>`}document.getElementById('header-auth-label').textContent=u.name||'Profile';updateCertPreview();}
+function signInWithGoogle(){console.log('Google OAuth: Add your CLIENT_ID in CONFIG');showMsg('otp-msg','Google OAuth requires CLIENT_ID configuration.','info');}
+function logoutUser(){state.user=null;document.getElementById('header-avatar').textContent='?';document.getElementById('header-auth-label').textContent='Sign Up';}
+
+/* ══════════════════════════════════════════════
+   FEATURE 1: EMERGENCY PANIC MODE
+══════════════════════════════════════════════ */
+function activatePanic(){
+  const dis=state.disasterType||'FIRE';
+  const d=DISASTERS[dis];
+  document.getElementById('panic-btn').classList.add('armed');
+  // Set overlay content
+  document.getElementById('panic-dis-icon').textContent=d.icon;
+  document.getElementById('panic-dis-title').textContent=dis+' EMERGENCY ACTIVATED';
+  document.getElementById('panic-subtitle').textContent=d.subtitle;
+  document.getElementById('panic-alert-bar').textContent=`⚠️ ${dis} EMERGENCY — ${d.subtitle.toUpperCase()} ⚠️`;
+  document.getElementById('panic-alert-bar').style.background=d.color;
+  // Steps
+  document.getElementById('panic-steps').innerHTML=d.actions.map((a,i)=>`<li class="panic-step"><div class="panic-step-num">${i+1}</div><span>${a}</span></li>`).join('');
+  // Contacts
+  document.getElementById('panic-contacts').innerHTML=EMERGENCY_CONTACTS.map(c=>`<div class="panic-contact"><span class="panic-contact-name">${c.icon} ${c.name}</span><span class="panic-contact-num">${c.number}</span></div>`).join('');
+  document.getElementById('panic-overlay').classList.add('active');
+  document.body.style.overflow='hidden';
+  // Auto-speak after delay
+  setTimeout(()=>speakEmergencyInstructions(), 800);
+}
+function deactivatePanic(){
+  document.getElementById('panic-overlay').classList.remove('active');
+  document.getElementById('panic-btn').classList.remove('armed');
+  document.body.style.overflow='';
+  stopSpeech();
+}
+
+/* ══════════════════════════════════════════════
+   FEATURE 5: VOICE SAFETY INSTRUCTIONS
+══════════════════════════════════════════════ */
+function speakEmergencyInstructions(){
+  if(!window.speechSynthesis)return;
+  stopSpeech();
+  const dis=state.disasterType||'FIRE';
+  const d=DISASTERS[dis];
+  const text=`Emergency alert! ${dis} emergency detected. ${d.subtitle}. Follow these immediate steps: ${d.actions.join('. ')}.`;
+  const utt=new SpeechSynthesisUtterance(text);
+  utt.rate=0.95; utt.pitch=1.1; utt.volume=1;
+  utt.onend=()=>{state.isSpeaking=false;updateVoiceBtn();}
+  window.speechSynthesis.speak(utt);
+  state.isSpeaking=true;updateVoiceBtn();
+}
+function toggleVoice(){
+  if(state.isSpeaking){stopSpeech();}
+  else{if(!state.disasterType)return;speakEmergencyInstructions();}
+}
+function stopSpeech(){
+  if(window.speechSynthesis){window.speechSynthesis.cancel();}
+  state.isSpeaking=false;updateVoiceBtn();
+}
+function updateVoiceBtn(){
+  const btn=document.getElementById('voice-btn'),lbl=document.getElementById('voice-btn-label');
+  if(state.isSpeaking){btn.classList.add('speaking');lbl.textContent='Speaking... (Click to Stop)';}
+  else{btn.classList.remove('speaking');lbl.textContent='Read Instructions Aloud';}
+}
+
+/* ══════════════════════════════════════════════
+   FEATURE 3: BFS EVACUATION ROUTE FINDER
+══════════════════════════════════════════════ */
+const GRID_ROWS=7, GRID_COLS=12;
+// 0=open, 1=wall, 2=start, 3=exit
+const BASE_GRID=[
+  [0,0,1,0,0,0,0,0,0,1,0,0],
+  [0,0,1,0,1,1,0,1,0,1,0,0],
+  [0,0,0,0,1,0,0,1,0,0,0,3],
+  [0,1,1,0,0,0,0,0,0,1,1,0],
+  [0,0,1,0,1,0,1,1,0,0,0,0],
+  [3,0,0,0,1,0,0,1,0,1,0,0],
+  [0,0,1,0,0,0,0,0,0,1,0,3],
+];
+let evacGrid=[], evacStart=[3,0];
+
+function initEvacGrid(){
+  evacGrid=BASE_GRID.map(row=>[...row]);
+  evacStart=[3,0];
+  renderEvacGrid();
+}
+
+function renderEvacGrid(path=null,visited=null){
+  const g=document.getElementById('evac-grid');
+  g.innerHTML='';
+  g.style.gridTemplateColumns=`repeat(${GRID_COLS},38px)`;
+  for(let r=0;r<GRID_ROWS;r++){
+    for(let c=0;c<GRID_COLS;c++){
+      const cell=document.createElement('div');
+      cell.className='evac-cell';
+      const val=evacGrid[r][c];
+      const isStart=r===evacStart[0]&&c===evacStart[1];
+      const isPath=path&&path.some(p=>p[0]===r&&p[1]===c)&&!isStart&&val!==3;
+      const isVisited=visited&&visited.has(`${r},${c}`)&&!isPath&&val!==3&&!isStart;
+      if(val===1)cell.classList.add('wall');
+      else if(val===3){cell.classList.add('exit');cell.textContent='🚪';}
+      else if(isStart){cell.classList.add('start');cell.textContent='🏃';}
+      else if(isPath){cell.classList.add('path');cell.textContent='·';}
+      else if(isVisited)cell.classList.add('visited');
+      if(val!==1&&val!==3){
+        cell.style.cursor='pointer';
+        cell.addEventListener('click',()=>{evacStart=[r,c];renderEvacGrid();document.getElementById('evac-result').textContent='Start position updated. Click "Find Safest Route" to run BFS.';});
+      }
+      g.appendChild(cell);
+    }
+  }
+}
+
+async function runBFS(){
+  // BFS from start to nearest exit
+  const [sr,sc]=evacStart;
+  const queue=[[sr,sc,[]]];
+  const visited=new Set([`${sr},${sc}`]);
+  const dirs=[[-1,0],[1,0],[0,-1],[0,1]];
+  let foundPath=null, foundVisited=new Set([`${sr},${sc}`]);
+
+  document.getElementById('evac-result').textContent='🔍 Running BFS pathfinding algorithm...';
+
+  // Animate BFS step by step
+  const bfsSteps=[];
+  const bfsQueue=[[sr,sc,[]]];
+  const bfsVisited=new Set([`${sr},${sc}`]);
+  let found=null;
+
+  while(bfsQueue.length>0&&!found){
+    const [r,c,path]=bfsQueue.shift();
+    if(evacGrid[r][c]===3){found={path,visited:new Set(bfsVisited)};break;}
+    for(const [dr,dc] of dirs){
+      const nr=r+dr,nc=c+dc;
+      const key=`${nr},${nc}`;
+      if(nr>=0&&nr<GRID_ROWS&&nc>=0&&nc<GRID_COLS&&!bfsVisited.has(key)&&evacGrid[nr][nc]!==1){
+        bfsVisited.add(key);bfsSteps.push({r:nr,c:nc});
+        bfsQueue.push([nr,nc,[...path,[nr,nc]]]);
+      }
+    }
+  }
+
+  if(!found){document.getElementById('evac-result').textContent='⚠️ No path found! All routes are blocked. Try changing your start position.';return;}
+
+  // Animate visited cells
+  for(let i=0;i<bfsSteps.length;i++){
+    await new Promise(r=>setTimeout(r,30));
+    const v=new Set();bfsSteps.slice(0,i+1).forEach(s=>v.add(`${s.r},${s.c}`));
+    renderEvacGrid(null,v);
+  }
+  await new Promise(r=>setTimeout(r,200));
+  renderEvacGrid(found.path,found.visited);
+  document.getElementById('evac-result').innerHTML=`✅ <strong>Safest route found!</strong> Path length: <strong>${found.path.length} steps</strong>. Follow the orange trail to the nearest exit 🚪. BFS guarantees this is the shortest possible path.`;
+}
+
+function resetEvacGrid(){initEvacGrid();document.getElementById('evac-result').textContent='Grid reset. Select your position on the map, then click "Find Safest Route".';}
+function randomizeStart(){const openCells=[];for(let r=0;r<GRID_ROWS;r++)for(let c=0;c<GRID_COLS;c++)if(evacGrid[r][c]===0)openCells.push([r,c]);if(openCells.length>0){evacStart=openCells[Math.floor(Math.random()*openCells.length)];renderEvacGrid();}}
+
+/* ══════════════════════════════════════════════
+   FEATURE 4: AI DISASTER CHATBOT
+══════════════════════════════════════════════ */
+function initChatbot(){
+  const msgs=document.getElementById('chat-messages');
+  msgs.innerHTML=`<div class="chat-msg bot"><div class="chat-avatar">🛡️</div><div class="chat-bubble">Hello! I'm the SafeCampus AI Safety Assistant. Ask me anything about disaster preparedness, evacuation procedures, emergency kits, or specific disaster types.</div></div>`;
+  const sug=document.getElementById('chat-suggestions');
+  sug.innerHTML=CHAT_SUGGESTIONS.map(s=>`<div class="chat-sug" onclick="sendChatMsg('${s}')">${s}</div>`).join('');
+}
+
+function sendChat(){
+  const inp=document.getElementById('chat-input');
+  const msg=inp.value.trim();
+  if(!msg)return;
+  inp.value='';
+  sendChatMsg(msg);
+}
+
+function sendChatMsg(msg){
+  const msgs=document.getElementById('chat-messages');
+  // User bubble
+  msgs.innerHTML+=`<div class="chat-msg user"><div class="chat-avatar user-av">👤</div><div class="chat-bubble">${msg}</div></div>`;
+  // AI response
+  const lower=msg.toLowerCase();
+  let response='I don\'t have specific information about that. Please contact campus security or call emergency services (112). For disaster-specific guidance, select a disaster type from the main selector above.';
+  for(const kb of AI_KNOWLEDGE){
+    if(kb.patterns.some(p=>lower.includes(p))){response=kb.response;break;}
+  }
+  setTimeout(()=>{
+    msgs.innerHTML+=`<div class="chat-msg bot"><div class="chat-avatar">🛡️</div><div class="chat-bubble">${response}</div></div>`;
+    msgs.scrollTop=msgs.scrollHeight;
+  },500);
+  msgs.scrollTop=msgs.scrollHeight;
+}
+
+/* ══════════════════════════════════════════════
+   FEATURE 6: CAMPUS MAP TOOLTIP
+══════════════════════════════════════════════ */
+function showMapTip(e,text){
+  const tip=document.getElementById('map-tooltip');
+  const wrap=document.querySelector('.campus-map-wrap');
+  const rect=wrap.getBoundingClientRect();
+  const mRect=e.currentTarget.getBoundingClientRect();
+  tip.textContent=text;
+  tip.style.left=(mRect.left-rect.left+10)+'px';
+  tip.style.top=(mRect.top-rect.top-40)+'px';
+  tip.classList.add('show');
+  clearTimeout(tip._t);
+  tip._t=setTimeout(()=>tip.classList.remove('show'),2500);
+}
+
+/* ══════════════════════════════════════════════
+   FEATURE 7: ALERT BROADCAST SYSTEM
+══════════════════════════════════════════════ */
+function broadcastPreset(msg){
+  document.getElementById('broadcast-input').value=msg;
+  broadcastMessage();
+}
+
+function broadcastMessage(){
+  const input=document.getElementById('broadcast-input');
+  const msg=input.value.trim();
+  if(!msg)return;
+  const now=new Date();
+  const time=now.toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+  const isAlert=msg.toLowerCase().includes('fire')||msg.toLowerCase().includes('evacuate')||msg.toLowerCase().includes('flood')||msg.toLowerCase().includes('earthquake')||msg.toLowerCase().includes('cyclone');
+  const isAllClear=msg.toLowerCase().includes('all clear')||msg.toLowerCase().includes('resolved');
+  const type=isAllClear?'info':isAlert?'danger':'warn';
+  state.broadcastLog.unshift({msg,time,type});
+  input.value='';
+  renderBroadcastLog();
+  // Show alert banner
+  const banner=document.getElementById('alert-banner');
+  banner.className=`alert-banner ${type} visible`;
+  document.getElementById('alert-text').textContent=msg;
+}
+
+function renderBroadcastLog(){
+  const log=document.getElementById('broadcast-log');
+  if(state.broadcastLog.length===0){log.innerHTML='<div style="font-size:.8rem;color:var(--muted);padding:10px 0;">No alerts broadcast yet.</div>';return;}
+  log.innerHTML=state.broadcastLog.map(b=>`
+    <div class="broadcast-msg" style="border-left:3px solid ${b.type==='danger'?'var(--danger)':b.type==='info'?'var(--accent2)':'var(--warn)'}">
+      <div style="font-size:1rem">${b.type==='danger'?'🚨':b.type==='info'?'✅':'⚠️'}</div>
+      <div class="broadcast-text">${b.msg}</div>
+      <div class="broadcast-time">${b.time}</div>
+    </div>`).join('');
+}
+
+function clearBroadcastLog(){
+  state.broadcastLog=[];
+  renderBroadcastLog();
+  document.getElementById('alert-banner').classList.remove('visible');
+}
+
+/* ══════════════════════════════════════════════
+   FEATURE 8: DISASTER TRAINING QUIZ
+══════════════════════════════════════════════ */
+function initQuiz(){state.quizIndex=0;state.quizScore=0;renderQuestion();}
+
+function renderQuestion(){
+  if(state.quizIndex>=QUIZ_QUESTIONS.length){showQuizResult();return;}
+  const q=QUIZ_QUESTIONS[state.quizIndex];
+  document.getElementById('quiz-scenario').textContent=q.scenario;
+  document.getElementById('quiz-question').textContent=q.q;
+  const opts=document.getElementById('quiz-options');
+  opts.innerHTML=q.options.map((o,i)=>`
+    <div class="quiz-option" id="qopt-${i}" onclick="answerQuiz(${i})">
+      <div class="quiz-opt-key">${String.fromCharCode(65+i)}</div>
+      <span>${o}</span>
+    </div>`).join('');
+  document.getElementById('quiz-feedback').className='quiz-feedback';
+  document.getElementById('quiz-feedback').textContent='';
+  document.getElementById('quiz-next-btn').style.display='none';
+  document.getElementById('quiz-progress').textContent=`Question ${state.quizIndex+1} of ${QUIZ_QUESTIONS.length}`;
+  state.quizAnswered=false;
+  document.getElementById('quiz-wrap').style.display='block';
+  document.getElementById('quiz-done').classList.remove('show');
+}
+
+function answerQuiz(idx){
+  if(state.quizAnswered)return;
+  state.quizAnswered=true;
+  const q=QUIZ_QUESTIONS[state.quizIndex];
+  const correct=idx===q.correct;
+  if(correct)state.quizScore++;
+  document.querySelectorAll('.quiz-option').forEach((o,i)=>{
+    o.classList.add('disabled');
+    if(i===q.correct)o.classList.add('correct');
+    else if(i===idx&&!correct)o.classList.add('wrong');
+  });
+  const fb=document.getElementById('quiz-feedback');
+  fb.className=`quiz-feedback show ${correct?'correct':'wrong'}`;
+  fb.innerHTML=`${correct?'✅ Correct!':'❌ Incorrect.'} ${q.explain}`;
+  document.getElementById('quiz-next-btn').style.display='block';
+}
+
+function nextQuestion(){state.quizIndex++;renderQuestion();}
+function restartQuiz(){initQuiz();}
+
+function showQuizResult(){
+  document.getElementById('quiz-wrap').style.display='none';
+  const done=document.getElementById('quiz-done');done.classList.add('show');
+  const pct=Math.round(state.quizScore/QUIZ_QUESTIONS.length*100);
+  document.getElementById('quiz-final-score').textContent=`${state.quizScore}/${QUIZ_QUESTIONS.length}`;
+  document.getElementById('quiz-final-label').textContent=pct>=80?'🏆 Excellent! You are well-prepared.':pct>=50?'👍 Good effort! Review missed questions.':'📚 Needs improvement. Retrain for campus safety.';
+  document.getElementById('quiz-final-score').style.color=pct>=80?'var(--success)':pct>=50?'var(--warn)':'var(--danger)';
+}
+
+/* ══════════════════════════════════════════════
+   FEATURE 9: SAFETY DASHBOARD
+══════════════════════════════════════════════ */
+const DASH_ITEMS=[
+  {name:'🔥 Fire Safety',    key:'fire',       color:'#ef4444', base:45},
+  {name:'🌍 Earthquake Readiness', key:'earthquake', color:'#f97316', base:35},
+  {name:'🌊 Flood Preparedness',   key:'flood',      color:'#3b82f6', base:30},
+  {name:'🌀 Cyclone Readiness',    key:'cyclone',    color:'#8b5cf6', base:25},
+  {name:'🩹 First Aid Knowledge',  key:'firstaid',   color:'#22c55e', base:50},
+];
+
+function initDashboard(){
+  const container=document.getElementById('dash-items');
+  container.innerHTML=DASH_ITEMS.map(item=>`
+    <div class="dash-item">
+      <div class="dash-item-header">
+        <span class="dash-item-name">${item.name}</span>
+        <span class="dash-pct" id="dash-pct-${item.key}" style="color:${item.color}">${item.base}%</span>
+      </div>
+      <div class="dash-bar-track"><div class="dash-bar-fill" id="dash-bar-${item.key}" style="width:0%;background:${item.color}"></div></div>
+    </div>`).join('');
+  setTimeout(()=>{
+    DASH_ITEMS.forEach(item=>{
+      document.getElementById(`dash-bar-${item.key}`).style.width=item.base+'%';
+    });
+  },300);
+}
+
+function updateDashboard(){
+  const score=calculatePreparednessScore();
+  DASH_ITEMS.forEach(item=>{
+    const adjusted=Math.min(100,item.base+Math.round(score*0.5));
+    document.getElementById(`dash-pct-${item.key}`).textContent=adjusted+'%';
+    document.getElementById(`dash-bar-${item.key}`).style.width=adjusted+'%';
+  });
+}
+
+/* ══════════════════════════════════════════════
+   FEATURE 10: EMERGENCY KIT CHECKLIST
+══════════════════════════════════════════════ */
+function initKitChecklist(){
+  document.getElementById('kit-grid').innerHTML=EMERGENCY_KIT.map(item=>`
+    <div class="kit-item" id="kit-${item.id}" onclick="toggleKit('${item.id}')">
+      <div class="kit-icon">${item.icon}</div>
+      <div class="kit-name">${item.name}</div>
+      <div class="kit-check" id="kit-check-${item.id}"></div>
+    </div>`).join('');
+  updateKitScore();
+}
+
+function toggleKit(id){
+  if(state.kitItems.has(id)){state.kitItems.delete(id);document.getElementById(`kit-${id}`).classList.remove('checked');document.getElementById(`kit-check-${id}`).innerHTML='';}
+  else{state.kitItems.add(id);document.getElementById(`kit-${id}`).classList.add('checked');document.getElementById(`kit-check-${id}`).innerHTML='✓';}
+  updateKitScore();
+}
+
+function updateKitScore(){
+  const n=state.kitItems.size,total=EMERGENCY_KIT.length;
+  document.getElementById('kit-score-num').textContent=`${n}/${total}`;
+  const pct=Math.round(n/total*100);
+  document.getElementById('kit-score-label').textContent=pct===100?'🎉 Emergency kit fully stocked!':pct>=60?`Good start — ${total-n} items remaining`:n===0?'Check off items you have in your emergency kit':`${pct}% complete — keep stocking your kit`;
+}
+
+/* ══════════════════════════════════════════════
+   FEATURE 11: GEOLOCATION
+══════════════════════════════════════════════ */
+const MOCK_SERVICES=[
+  {name:'District General Hospital',type:'Hospital',dist:'0.8 km',icon:'🏥',color:'var(--success)'},
+  {name:'City Police Station',type:'Police',dist:'1.2 km',icon:'👮',color:'var(--accent2)'},
+  {name:'Fire & Rescue Station',type:'Fire Dept',dist:'1.5 km',icon:'🚒',color:'var(--danger)'},
+  {name:'Campus Medical Center',type:'Medical',dist:'0.2 km',icon:'⛑️',color:'#22c55e'},
+  {name:'Civil Defence Office',type:'Disaster Mgmt',dist:'2.1 km',icon:'🏛️',color:'var(--warn)'},
+  {name:'Blood Bank',type:'Emergency',dist:'2.8 km',icon:'🩸',color:'#ef4444'},
+];
+
+function detectLocation(){
+  const status=document.getElementById('geo-status');
+  status.textContent='⏳ Detecting your location...';
+  if(navigator.geolocation){
+    navigator.geolocation.getCurrentPosition(
+      pos=>{
+        const lat=pos.coords.latitude.toFixed(4),lng=pos.coords.longitude.toFixed(4);
+        status.innerHTML=`✅ Location detected: <strong>Lat ${lat}, Lng ${lng}</strong> — Showing nearby emergency services`;
+        renderGeoServices();
+      },
+      err=>{
+        status.textContent='📍 Using simulated location (Bengaluru Campus) — showing nearest services';
+        renderGeoServices();
+      }
+    );
+  } else {
+    status.textContent='📍 Geolocation not supported — showing simulated services for demo';
+    renderGeoServices();
+  }
+}
+
+function renderGeoServices(){
+  document.getElementById('geo-services').innerHTML=MOCK_SERVICES.map(s=>`
+    <div class="geo-service-card">
+      <div class="geo-service-icon">${s.icon}</div>
+      <div class="geo-service-name">${s.name}</div>
+      <div class="geo-service-dist">📍 ${s.dist} away</div>
+      <div class="geo-service-type" style="background:${s.color}20;color:${s.color}">${s.type}</div>
+    </div>`).join('');
+}
+
+/* ══════════════════════════════════════════════
+   FEATURE 12: SEVERITY METER
+══════════════════════════════════════════════ */
+const SEVERITY_DATA={
+  low:   {range:[1,3],  cls:'low',   label:'LOW',    instructions:['Monitor local weather alerts and news','Review evacuation routes with your team','Ensure emergency kit is accessible','Check that all emergency contacts are updated','Continue normal activities with awareness']},
+  medium:{range:[4,6],  cls:'medium',label:'MODERATE',instructions:['Prepare emergency bags for quick evacuation','Brief all staff and students on current threat','Test emergency communication systems','Position fire extinguishers at key locations','Restrict outdoor activities and events']},
+  high:  {range:[7,10], cls:'high',  label:'HIGH/EXTREME',instructions:['⚠️ Initiate immediate evacuation procedures','Activate campus-wide emergency alarm system','Contact all emergency services (100/101/108)','Shelter in designated safe zones immediately','Account for all personnel at assembly points']},
+};
+
+function updateSeverity(val){
+  state.severityLevel=parseInt(val);
+  const level=val<=3?'low':val<=6?'medium':'high';
+  const d=SEVERITY_DATA[level];
+  const el=document.getElementById('severity-level');
+  el.className=`severity-level ${d.cls}`;
+  document.getElementById('severity-badge').className=`severity-badge ${d.cls}`;
+  document.getElementById('severity-badge').textContent=`${d.label} — Level ${val}`;
+  document.getElementById('severity-text').innerHTML=d.instructions.map(i=>`• ${i}`).join('<br>');
+}
+
+/* ══════════════════════════════════════════════
+   FEATURE 14: PREPAREDNESS CERTIFICATE
+══════════════════════════════════════════════ */
+function updateCertPreview(){
+  const name=document.getElementById('cert-name').value.trim()||'Your Name';
+  const score=calculatePreparednessScore();
+  document.getElementById('cert-display-name').textContent=name;
+  document.getElementById('cert-display-score').textContent=`Preparedness Score: ${score}%`;
+  document.getElementById('cert-date').textContent=`Issued: ${new Date().toLocaleDateString('en-IN',{day:'numeric',month:'long',year:'numeric'})}`;
+  const unlocked=score>=80&&name!=='Your Name'&&name.length>1;
+  document.getElementById('cert-download-btn').disabled=!unlocked;
+  document.getElementById('cert-status').style.color=unlocked?'var(--success)':'var(--danger)';
+  document.getElementById('cert-status').textContent=unlocked?`✅ Certificate unlocked! Score: ${score}% — Ready to download.`:`Complete 80%+ preparedness checklist (current: ${score}%) and enter your name.`;
+}
+
+function downloadCertificate(){
+  const name=document.getElementById('cert-name').value.trim();
+  const score=calculatePreparednessScore();
+  const date=new Date().toLocaleDateString('en-IN',{day:'numeric',month:'long',year:'numeric'});
+  // Generate certificate as HTML and open in new window for printing
+  const certHTML=`<!DOCTYPE html><html><head><title>SafeCampus Certificate</title><style>
+    @import url('https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@400;500&display=swap');
+    body{margin:0;background:#0f172a;display:grid;place-items:center;min-height:100vh;font-family:'DM Sans',sans-serif;}
+    .cert{width:700px;background:linear-gradient(135deg,#0f172a,#1e293b);border:3px solid #eab308;border-radius:20px;padding:50px 60px;text-align:center;position:relative;box-shadow:0 0 60px rgba(234,179,8,0.2);}
+    .cert::before,.cert::after{content:'🛡️';position:absolute;font-size:120px;opacity:0.05;}
+    .cert::before{top:-20px;left:-20px;}.cert::after{bottom:-20px;right:-20px;}
+    h1{font-family:'Syne',sans-serif;color:#eab308;font-size:2rem;letter-spacing:.1em;margin:10px 0 4px;}
+    .sub{color:rgba(255,255,255,.4);font-size:.8rem;text-transform:uppercase;letter-spacing:.12em;margin-bottom:36px;}
+    .awarded{color:rgba(255,255,255,.5);font-size:.9rem;margin-bottom:8px;}
+    .name{font-family:'Syne',sans-serif;font-size:2.2rem;font-weight:800;color:#fff;margin-bottom:10px;}
+    .score{display:inline-block;background:rgba(234,179,8,.15);border:1px solid rgba(234,179,8,.3);color:#eab308;padding:6px 22px;border-radius:99px;font-weight:700;margin-bottom:28px;}
+    p{color:rgba(255,255,255,.6);line-height:1.7;font-size:.92rem;max-width:480px;margin:0 auto 28px;}
+    .date{color:rgba(255,255,255,.3);font-size:.78rem;}
+    .dots{display:flex;justify-content:space-between;opacity:.15;margin-top:24px;font-size:.6rem;letter-spacing:.2em;color:#eab308;}
+    @media print{body{background:#fff;}.cert{border-color:#333;background:#fff;}h1,.name,.score{color:#333 !important;}p,.date,.sub,.awarded{color:#555 !important;}}
+  </style></head><body>
+  <div class="cert">
+    <div style="font-size:3rem;margin-bottom:12px;">🛡️</div>
+    <h1>CERTIFICATE OF PREPAREDNESS</h1>
+    <div class="sub">SafeCampus Disaster Preparedness Program</div>
+    <div class="awarded">This is to certify that</div>
+    <div class="name">${name}</div>
+    <div class="score">Preparedness Score: ${score}%</div>
+    <p>Has successfully completed the SafeCampus Disaster Preparedness Training and demonstrated proficiency in emergency response protocols, evacuation procedures, and disaster safety guidelines.</p>
+    <div class="date">Issued on ${date}</div>
+    <div class="dots">⬡ ⬡ ⬡ ⬡ ⬡ ⬡ ⬡ ⬡ ⬡ ⬡ ⬡ ⬡</div>
+  </div>
+  <script>setTimeout(()=>window.print(),500)<\/script></body></html>`;
+  const win=window.open('','_blank');
+  win.document.write(certHTML);
+  win.document.close();
+}
+
+/* ══════════════════════════════════════════════
+   PREPAREDNESS SCORE (Feature 2)
+══════════════════════════════════════════════ */
+function calculatePreparednessScore(){
+  const checked=state.checkedItems.size, total=CHECKLIST_ITEMS.length;
+  return total===0?0:Math.round((checked/total)*100);
+}
+
+function generateJSON(){
+  const score=calculatePreparednessScore();
+  return {
+    app:"SafeCampus",
+    timestamp:new Date().toISOString(),
+    disasterType:state.disasterType||"None",
+    preparednessScore:score,
+    preparednessLevel:score>=80?"Prepared":score>=40?"Needs Improvement":"At Risk",
+    checkedItems:[...state.checkedItems],
+    emergencyKitItems:[...state.kitItems],
+    kitCompleteness:Math.round(state.kitItems.size/EMERGENCY_KIT.length*100),
+    quizScore:`${state.quizScore}/${QUIZ_QUESTIONS.length}`,
+    disasterSeverityLevel:state.severityLevel,
+    broadcastAlerts:state.broadcastLog.length,
+    user:state.user?{name:state.user.name,email:state.user.email}:"Anonymous",
+    evacuationStartPoint:evacStart,
+  };
+}
+
+function updateScore(){
+  const score=calculatePreparednessScore(),circ=163.36,arc=document.getElementById('ring-arc');
+  arc.style.strokeDashoffset=circ-(score/100)*circ;
+  arc.style.stroke=score>=70?'var(--success)':score>=40?'var(--warn)':'var(--danger)';
+  document.getElementById('ring-pct').textContent=score+'%';
+  document.getElementById('score-bar').style.width=score+'%';
+  document.getElementById('score-label').textContent=score===0?'Not Started':score===100?'🎉 Fully Prepared!':score>=80?'Prepared':score>=40?'Needs Improvement':'At Risk';
+  document.getElementById('score-desc').textContent=`${state.checkedItems.size} of ${CHECKLIST_ITEMS.length} items — ${score}% preparedness`;
+  const badge=document.getElementById('status-badge');
+  badge.textContent=state.disasterType?(score>=80?'Prepared':score>=40?'Needs Improvement':'At Risk'):'Standby';
+  badge.className='status-badge'+(state.disasterType?(score>=80?' prepared':score>=40?' needs-improvement':' at-risk'):'');
+  updateDashboard();
+  updateCertPreview();
+}
+
+/* ══════════════════════════════════════════════
+   CHECKLIST RENDER
+══════════════════════════════════════════════ */
+function renderChecklist(){
+  document.getElementById('checklist').innerHTML=CHECKLIST_ITEMS.map(item=>`
+    <div class="check-item" id="ci-${item.id}" onclick="toggleCheck('${item.id}')">
+      <div class="check-box" id="box-${item.id}"></div>
+      <div class="check-label">${item.label}</div>
+    </div>`).join('');
+}
+
+function toggleCheck(id){
+  const item=document.getElementById(`ci-${id}`),box=document.getElementById(`box-${id}`);
+  if(state.checkedItems.has(id)){state.checkedItems.delete(id);item.classList.remove('checked');box.innerHTML='';}
+  else{state.checkedItems.add(id);item.classList.add('checked');box.innerHTML='<svg width="13" height="10" viewBox="0 0 13 10" fill="none"><polyline points="1.5,5 5,8.5 11.5,1.5" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>';}
+  updateUI();
+}
+
+/* ══════════════════════════════════════════════
+   CONTACTS RENDER
+══════════════════════════════════════════════ */
+function renderContacts(){
+  document.getElementById('contacts-grid').innerHTML=EMERGENCY_CONTACTS.map(c=>`
+    <div class="contact-card" onclick="window.open('tel:${c.number}')">
+      <div class="contact-icon" style="background:${c.bg};width:38px;height:38px;border-radius:10px;display:grid;place-items:center;font-size:1.2rem;flex-shrink:0;">${c.icon}</div>
+      <div class="contact-name" style="flex:1;font-family:'Syne',sans-serif;font-size:.82rem;font-weight:700;">${c.name}</div>
+      <div class="contact-number" style="font-size:.95rem;font-weight:600;color:var(--dis-hue);font-family:'Syne',sans-serif;">${c.number}</div>
+    </div>`).join('');
+}
+
+/* ══════════════════════════════════════════════
+   MAIN UI UPDATE
+══════════════════════════════════════════════ */
+function updateUI(){
+  const d=state.disasterType?DISASTERS[state.disasterType]:null;
+  // Update theme colors
+  if(d){
+    document.documentElement.style.setProperty('--dis-hue',d.color);
+    document.documentElement.style.setProperty('--dis-glow',d.glow);
+    document.body.style.setProperty('--dis-hue',d.color);
+    // body glow
+    document.body.style.cssText=(document.body.style.cssText||'').replace(/--[^;]+;/g,'');
+    document.documentElement.style.setProperty('--dis-hue',d.color);
+    document.documentElement.style.setProperty('--dis-glow',d.glow);
+  }
+  // Safety panel
+  const panel=document.getElementById('safety-panel');
+  if(d){
+    panel.classList.add('visible');
+    document.getElementById('dis-icon').textContent=d.icon;
+    document.getElementById('dis-title').textContent=state.disasterType;
+    document.getElementById('dis-subtitle').textContent=d.subtitle;
+    document.getElementById('actions-list').innerHTML=d.actions.map((a,i)=>`
+      <li class="action-item">
+        <div class="action-num">${i+1}</div>
+        <div class="action-text">${a}</div>
+      </li>`).join('');
+    // Alert banner
+    document.getElementById('alert-banner').className='alert-banner danger visible';
+    document.getElementById('alert-text').textContent=`${d.icon} ${state.disasterType} scenario active. ${d.subtitle}`;
+  } else {
+    panel.classList.remove('visible');
+    document.getElementById('alert-banner').classList.remove('visible');
+  }
+  updateScore();
+  renderJSON();
+}
+
+function renderJSON(){
+  const p=generateJSON();
+  function hl(v){
+    if(typeof v==='string')return`<span class="json-str">"${v}"</span>`;
+    if(typeof v==='number')return`<span class="json-num">${v}</span>`;
+    if(Array.isArray(v))return`[\n${v.map(x=>'    '+hl(x)).join(',\n')}\n  ]`;
+    return String(v);
+  }
+  document.getElementById('json-output').innerHTML=`{\n${Object.entries(p).map(([k,v])=>`  <span class="json-key">"${k}"</span>: ${hl(v)}`).join(',\n')}\n}`;
+}
+
+function copyJSON(){
+  navigator.clipboard.writeText(JSON.stringify(generateJSON(),null,2)).then(()=>{
+    const btn=document.querySelector('.json-copy-btn');
+    btn.textContent='✅ Copied!';setTimeout(()=>btn.textContent='📋 Copy JSON',1800);
+  });
+}
+
+/* ══════════════════════════════════════════════
+   WHATSAPP ALERT
+══════════════════════════════════════════════ */
+function sendWhatsAppAlert(e){
+  e.preventDefault();
+  const dis=state.disasterType;
+  const score=calculatePreparednessScore();
+  const now=new Date();
+  const timeStr=now.toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'});
+  const dateStr=now.toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'});
+  let msg=`🚨 *SAFECAMPUS EMERGENCY ALERT* 🚨\n\n📍 *Campus Emergency SOS*\n🕐 Time: ${timeStr}, ${dateStr}\n`;
+  if(dis){const d={EARTHQUAKE:'🌍',FIRE:'🔥',FLOOD:'🌊',CYCLONE:'🌀'};msg+=`⚠️ Disaster Type: ${d[dis]||''} *${dis}*\n📊 Preparedness Score: *${score}%*\n\n🆘 *Immediate assistance required!*\nPlease respond to this emergency immediately.\n`;}
+  else{msg+=`⚠️ *General Campus Emergency*\n📊 Preparedness Score: *${score}%*\n\n🆘 *Immediate assistance required!*\n`;}
+  msg+=`\n— Sent via SafeCampus Disaster Preparedness System`;
+  window.open(`https://wa.me/919108809416?text=${encodeURIComponent(msg)}`,'_blank');
+}
+
+/* ══════════════════════════════════════════════
+   EVENTS
+══════════════════════════════════════════════ */
+function handleDisasterChange(val){
+  state.disasterType=val||null;
+  document.getElementById('disaster-select').value=val||'';
+  document.querySelectorAll('.chip').forEach(c=>c.classList.toggle('active',c.dataset.disaster===val));
+  updateUI();
+}
+document.getElementById('disaster-select').addEventListener('change',function(){handleDisasterChange(this.value)});
+document.querySelectorAll('.chip').forEach(chip=>chip.addEventListener('click',()=>handleDisasterChange(chip.classList.contains('active')?'':chip.dataset.disaster)));
+
+// Intersection observer for fade-up animations
+const obs=new IntersectionObserver(entries=>entries.forEach(e=>{if(e.isIntersecting){e.target.classList.add('in');obs.unobserve(e.target)}}),{threshold:.08});
+document.querySelectorAll('.fade-up').forEach(el=>obs.observe(el));
+
+/* ══════════════════════════════════════════════
+   INIT
+══════════════════════════════════════════════ */
+function initAll(){
+  renderChecklist();
+  renderContacts();
+  initEvacGrid();
+  initChatbot();
+  initDashboard();
+  initKitChecklist();
+  initQuiz();
+  updateSeverity(3);
+  updateUI();
+  startSyntaxSquadColors();
+}
+
+/* Rainbow color cycling + bounce animation for Syntax Squad */
+function startSyntaxSquadColors(){
+  const colors=['#f97316','#ef4444','#eab308','#22c55e','#3b82f6','#8b5cf6','#ec4899','#06b6d4','#f59e0b','#10b981'];
+  let ci=0;
+  const el=document.getElementById('syntax-squad-text');
+  if(!el)return;
+
+  /* Add the CSS keyframe animation via a style tag */
+  const style=document.createElement('style');
+  style.textContent=`
+    @keyframes squadBounce {
+      0%   { transform: translateY(0px) scale(1);   }
+      20%  { transform: translateY(-14px) scale(1.08); }
+      40%  { transform: translateY(0px) scale(1);   }
+      60%  { transform: translateY(-7px) scale(1.04); }
+      80%  { transform: translateY(0px) scale(1);   }
+      100% { transform: translateY(0px) scale(1);   }
+    }
+    #syntax-squad-text {
+      animation: squadBounce 2s ease-in-out infinite;
+      cursor: default;
+      transition: color .5s, text-shadow .5s;
+    }
+    #syntax-squad-text:hover {
+      animation-play-state: paused;
+      letter-spacing: .18em !important;
+    }
+  `;
+  document.head.appendChild(style);
+
+  el.style.color=colors[0];
+  el.style.textShadow='0 0 22px '+colors[0]+'90';
+
+  setInterval(()=>{
+    ci=(ci+1)%colors.length;
+    el.style.color=colors[ci];
+    el.style.textShadow='0 0 22px '+colors[ci]+'90';
+  },1000);
+}
+</script>
+</body>
+</html>
